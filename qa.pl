@@ -17,12 +17,17 @@ while(1){
     # Make sure query is formatted correctly
     elsif(!($query =~ /^[Ww](ho|hat|hen|here)\s+/)){ println "Please begin your query with a 'Who', 'What', 'When', or 'Where'"; next; }
 
-    my @split =~ ($query =~ /^([Ww](ho|hat|hen|here)\s+\w+)\s+(.*)/);
+    my @split = ($query =~ /^([Ww](ho|hat|hen|here)\s+\w+)\s+(.*)/);
     my $questionType = $split[0]; # "Who is", "When did", "Where is", etc.
     my $subject = $split[2]; # The rest of the query that isn't part of the question type
 
     # Search Wikipedia for the subject
-    
+    my $reducedSubject = testSubjectValid($subject);
+    if($reducedSubject == -1){
+        println "I'm sorry, I can't find the answer to that question, feel free to try rephrasing it or asking another"; next;
+    }
+
+    println $reducedSubject;
 }
 
 # Tests if the given subject has a Wikipedia page, if not it
@@ -31,7 +36,7 @@ while(1){
 # retrieved a Wiki page, or -1 if all words were removed
 # from the string and no Wiki page was found
 # Ex: If user gives query "When was George Washington born", 
-#       subject will be "George Washington born", and this 
+#       input will be "George Washington born", and the 
 #       method will recurse down to find the "George Washington"
 #       page.
 sub testSubjectValid {
