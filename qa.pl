@@ -17,19 +17,14 @@ while(1){
     # Make sure input is formatted correctly
     elsif(!($input =~ /^[Ww](ho|hat|hen|here)\s+/)){ println "Please begin your input with a 'Who', 'What', 'When', or 'Where'"; next; }
 
-    my @split = ($input =~ /^([Ww](?:ho|hat|hen|here)\s+\w+)\s+(.*)/);
+    # Split user's query into the question type ("who is", "what are", etc..) and the actual question
+    my ($questionType, $question) = ($input =~ /^([Ww](?:ho|hat|hen|here)\s+\w+)\s+(.*)/);
     
-    # Search Wikipedia for the subject
-    my @reducedSubject = testSubjectValid($split[1]);
-    if($reducedSubject[0] == -1){
-        println "I'm sorry, I can't find the answer to that question, feel free to try rephrasing it or asking another"; next;
+    # Search Wikipedia for the subject, see testSubjectValid() method for details on return values
+    my ($subject, $remainder, $wikiEntry) = testSubjectValid($question);
+    if($subject[0] == -1){
+        println "I'm sorry, I can't find the answer to that question, feel free to try another"; next;
     }
-
-    # Form an array with 3 elements:
-    #   [0] - Question type ('who is', 'when did', etc..)
-    #   [1] - Subject of question found by testSubjectValid()
-    #   [2] - Rest of query after the subject (or -1 if N/A)
-    my @question = ($split[0], $reducedSubject[0], $reducedSubject[1]);
 
     println "C".$question[1];
 }
@@ -52,16 +47,11 @@ while(1){
 sub testSubjectValid {
     my $subject = $_[0];
     my $ongoing = $_[1];
-    println "A".$subject."A";
-    println "A".$ongoing."A";
     if(my $result = $wiki->search($subject)){
-        println "RETURNING |".$subject."|"."$ongoing"."|";
         return ($subject, $ongoing, $result->text());
     }
     else {
         if(my @temp = ($subject =~ /(.*)\s+(\w+)/)){
-            println "\tB".$temp[0];
-            println "\tB".$temp[1];
             return testSubjectValid($temp[0], $temp[1]." ".$ongoing);
         }
         else{
