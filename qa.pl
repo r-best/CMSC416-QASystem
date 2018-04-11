@@ -25,7 +25,8 @@ while(1){
     if($subject == -1){
         println "I'm sorry, I can't find the answer to that question, feel free to try another"; next;
     }
-    $wikiEntry =~ s/\(.*\)/\s/g;
+    $wikiEntry =~ s/\(.*?\)/\s/sg;
+    $wikiEntry =~ s/'(.*?)'/\1/sg;
 
     # For each restructured query, find all sentences that contain it, 
     # and extract unigrams, bigrams, and trigrams from them
@@ -38,7 +39,7 @@ while(1){
         my @matches = ($wikiEntry =~ /$transformed.*?[\.\?!]/sg);
         for my $match (@matches){
             my @tokens = split(/\s+/, $match);
-            for(my $i = 0; $i < 0+@tokens; $i++){
+            for(my $i = 0; $i < scalar @tokens; $i++){
                 push @{$unigrams{$tokens[$i]}}, $weight;
                 if($i > 0){
                     push @{$bigrams{$tokens[$i-1]." ".$tokens[$i]}}, $weight;
@@ -49,12 +50,43 @@ while(1){
             }
         }
     }
+
+    if(scalar keys %unigrams == 0 || scalar keys %bigrams == 0 || scalar keys %trigrams == 0){
+        println "I'm sorry, I can't find the answer to that question, feel free to try another"; next;
+    }
     
     # Take the hashes of arrays and convert the
     # arrays to averages of their contents
     averageWeights(\%unigrams);
     averageWeights(\%bigrams);
     averageWeights(\%trigrams);
+
+    my @sortedUnigrams = sort { $unigrams{$b} <=> $unigrams{$a} } keys %unigrams;
+    my @sortedBigrams = sort { $bigrams{$b} <=> $bigrams{$a} } keys %bigrams;
+    my @sortedTrigrams = sort { $trigrams{$b} <=> $trigrams{$a} } keys %trigrams;
+
+    # Tiling
+    my $response = $subject;
+    for my $trigram (@sortedTrigrams){
+        my @responseWords = split(/\s+/, $response);
+        my ($trigramW1, $trigramW2, $trigramW3) = split(/\s+/, $trigram);
+
+        if($responseWords[(scalar @responseWords)-2] eq $trigramW1 &&
+            $responseLastWord eq $trigramW2){
+            $response .= " ".$trigramW3;
+        }
+        elsif($responseWords[(scalar @responseWords)-1] eq $trigramW1){
+            $response .= " ".$trigramW2." ".$trigramW3;
+        }
+
+        if($responseWords[0] eq $trigramW2 && $responseWords[1] eq $trigramW3){
+            $response = $trigramW1." ".$response;
+        }
+        elsif($responseWords[0] eq $trigramW3){
+            $response = $trigramW1." ".$trigramW2." ".$response;
+        }
+    }
+    println $response;
 }
 
 # Finds the subject of a query by recursively removing the last
@@ -106,9 +138,9 @@ sub transform {
     my @searches;
 
     my $temp = "";
-    for(my $i = (0+@subjectSplit)-1; $i >= 0; $i--){
+    for(my $i = (scalar @subjectSplit)-1; $i >= 0; $i--){
         $temp = $subjectSplit[$i]." ".$temp;
-        push @searches, [$temp.$verb." ".$remainder, (((0+@subjectSplit)-$i)/(0+@subjectSplit))*10];
+        push @searches, [$temp.$verb." ".$remainder, (((scalar @subjectSplit)-$i)/(scalar @subjectSplit))*10];
     }
     
     return @searches;
@@ -123,6 +155,6 @@ sub averageWeights {
         for my $number (@{$hash->{$key}}){
             $total += $number;
         }
-        $hash->{$key} = $total / (0+@{$hash->{$key}});
+        $hash->{$key} = $total / (scalar @{$hash->{$key}});
     }
 }
