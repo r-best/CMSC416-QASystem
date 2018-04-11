@@ -22,13 +22,16 @@ while(1){
     
     # Search Wikipedia for the subject, see testSubjectValid() method for details on return values
     my ($subject, $remainder, $wikiEntry) = testSubjectValid($question);
-    if($subject[0] == -1){
+    if($subject == -1){
         println "I'm sorry, I can't find the answer to that question, feel free to try another"; next;
     }
     $wikiEntry =~ s/\(.*\)/\s/g;
 
     # For each restructured query, find all sentences that contain it, 
     # and extract unigrams, bigrams, and trigrams from them
+    # The three hashes are maps of ngram => array of weights
+    #   Every time an ngram is found, the weight of the query transform
+    #   that retrieved it is pushed onto the corresponding array
     my %unigrams, %bigrams, %trigrams;
     for my $ref (transform($questionType, $subject, $remainder)){
         my ($transformed, $weight) = @{$ref};
@@ -46,7 +49,12 @@ while(1){
             }
         }
     }
-    println Dumper(%trigrams);
+    
+    # Take the hashes of arrays and convert the
+    # arrays to averages of their contents
+    averageWeights(\%unigrams);
+    averageWeights(\%bigrams);
+    averageWeights(\%trigrams);
 }
 
 # Finds the subject of a query by recursively removing the last
@@ -64,8 +72,7 @@ while(1){
 #       function will recurse down to find the "George Washington" page,
 #       then return ["George Washington", "born", *wiki page summary*]
 sub testSubjectValid {
-    my $subject = $_[0];
-    my $ongoing = $_[1];
+    my ($subject, $ongoing) = @_;
     if(my $result = $wiki->search($subject)){
         $ongoing =~ s/(.*)\s+/\1/;
         return ($subject, $ongoing, $result->text());
@@ -105,4 +112,17 @@ sub transform {
     }
     
     return @searches;
+}
+
+# Takes as input a reference to a hash of the form key => [array of numbers]
+# Modifies the hash to be of the form key => average of the original array
+sub averageWeights {
+    my ($hash) = @_;
+    for my $key (keys %$hash){
+        my $total = 0;
+        for my $number (@{$hash->{$key}}){
+            $total += $number;
+        }
+        $hash->{$key} = $total / (0+@{$hash->{$key}});
+    }
 }
