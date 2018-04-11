@@ -18,15 +18,19 @@ while(1){
     elsif(!($input =~ /^[Ww](ho|hat|hen|here)\s+/)){ println "Please begin your input with a 'Who', 'What', 'When', or 'Where'"; next; }
 
     # Split user's query into the question type ("who is", "what are", etc..) and the actual question
-    my ($questionType, $question) = ($input =~ /^([Ww](?:ho|hat|hen|here)\s+\w+(?:\s+a)?)\s+(.*)/);
+    my ($questionType, $question) = ($input =~ /^([Ww](?:ho|hat|hen|here)\s+\w+(?:\s+an?)?)\s+(.*)/);
     
     # Search Wikipedia for the subject, see testSubjectValid() method for details on return values
     my ($subject, $remainder, $wikiEntry) = testSubjectValid($question);
     if($subject == -1){
         println "I'm sorry, I can't find the answer to that question, feel free to try another"; next;
     }
-    $wikiEntry =~ s/\(.*?\)/\s/sg;
+    $wikiEntry =~ s/\{\{.*?\}\}//sg;
+    $wikiEntry =~ s/\{.*?\}//sg;
+    $wikiEntry =~ s/<ref.*?\/(ref)?>//sg;
+    $wikiEntry =~ s/\s?\(.*?\)\s?/ /sg;
     $wikiEntry =~ s/'(.*?)'/\1/sg;
+    # println $wikiEntry;
 
     # For each restructured query, find all sentences that contain it, 
     # and extract unigrams, bigrams, and trigrams from them
@@ -36,8 +40,11 @@ while(1){
     my %unigrams = (), %bigrams = (), %trigrams = ();
     for my $ref (transform($questionType, $subject, $remainder)){
         my ($transformed, $weight) = @{$ref};
+        # println $transformed;
         my @matches = ($wikiEntry =~ /$transformed.*?[\.\?!]/sg);
         for my $match (@matches){
+            # println $match;
+            $match =~ s/([\(\)\$,'`"\x{2019}\x{201c}\x{201d}%&:;])/ $1 /g; # Separate punctuation characters into their own tokens
             my @tokens = split(/\s+/, $match);
             for(my $i = 0; $i < scalar @tokens; $i++){
                 push @{$unigrams{$tokens[$i]}}, $weight;
@@ -55,8 +62,8 @@ while(1){
         println "I'm sorry, I can't find the answer to that question, feel free to try another"; next;
     }
     
-    # Take the hashes of arrays and convert the
-    # arrays to averages of their contents
+    # Take the hashes of arrays and convert the arrays to averages of their contents
+    # so that the hashes are now maps of ngram => average weight
     averageWeights(\%unigrams);
     averageWeights(\%bigrams);
     averageWeights(\%trigrams);
@@ -64,8 +71,9 @@ while(1){
     my @sortedUnigrams = sort { $unigrams{$b} <=> $unigrams{$a} } keys %unigrams;
     my @sortedBigrams = sort { $bigrams{$b} <=> $bigrams{$a} } keys %bigrams;
     my @sortedTrigrams = sort { $trigrams{$b} <=> $trigrams{$a} } keys %trigrams;
-    # println Dumper(@sortedTrigrams);
+    
     # Tiling
+    println "BEGINNING TILING";
     my $flag = 1;
     my $response = $subject;
     while($flag){
@@ -142,13 +150,20 @@ sub transform {
     my $subject = $_[1];
     my @subjectSplit = split(/\s+/, $subject);
     my $remainder = $_[2];
-
     my @searches;
-
+    
     my $temp = "";
     for(my $i = (scalar @subjectSplit)-1; $i >= 0; $i--){
         $temp = $subjectSplit[$i]." ".$temp;
-        push @searches, [$temp.$verb." ".$remainder, (((scalar @subjectSplit)-$i)/(scalar @subjectSplit))*10];
+        if($remainder eq ""){
+            push @searches, [$temp.$verb, 1];
+        } else {
+            push @searches, [$temp.$verb." ".$remainder, 1];
+        }
+    }
+    
+    if(scalar @subjectSplit == 2){
+        push @searches, [$subjectSplit[0]."\\s+\\w+?\\s+".$subjectSplit[1]." ".$verb." ".$remainder, 2];
     }
     
     return @searches;
