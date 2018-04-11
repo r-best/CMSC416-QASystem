@@ -26,26 +26,27 @@ while(1){
         println "I'm sorry, I can't find the answer to that question, feel free to try another"; next;
     }
     $wikiEntry =~ s/\(.*\)/\s/g;
-    # println $wikiEntry;
 
-    my @unigrams, @bigrams, @trigrams;
-    for my $transformed (transform($questionType, $subject, $remainder)){
+    # For each restructured query, find all sentences that contain it, 
+    # and extract unigrams, bigrams, and trigrams from them
+    my %unigrams, %bigrams, %trigrams;
+    for my $ref (transform($questionType, $subject, $remainder)){
+        my ($transformed, $weight) = @{$ref};
         my @matches = ($wikiEntry =~ /$transformed.*?[\.\?!]/sg);
         for my $match (@matches){
             my @tokens = split(/\s+/, $match);
             for(my $i = 0; $i < 0+@tokens; $i++){
-                push @unigrams, $tokens[$i];
+                push @{$unigrams{$tokens[$i]}}, $weight;
                 if($i > 0){
-                    push @bigrams, $tokens[$i-1]." ".$tokens[$i];
+                    push @{$bigrams{$tokens[$i-1]." ".$tokens[$i]}}, $weight;
                 }
                 if($i > 1){
-                    push @trigrams, $tokens[$i-2]." ".$tokens[$i-1]." ".$tokens[$i];
+                    push @{$trigrams{$tokens[$i-2]." ".$tokens[$i-1]." ".$tokens[$i]}}, $weight;
                 }
             }
         }
     }
-    println Dumper(@bigrams);
-    # println substr $wikiEntry, $index;
+    println Dumper(%trigrams);
 }
 
 # Finds the subject of a query by recursively removing the last
@@ -55,14 +56,13 @@ while(1){
 #       compounds as the recursive calls continue and gets returned
 #       at the end (see #2 in Returns)
 # Returns 3 items if a Wiki page is found (or (-1 -1 -1) if not):
-#   - The substring of the query that successfully
-#       retrieved a Wiki page
+#   - The substring of the query that successfully retrieved a Wiki page
 #   - The rest of the query
 #   - The summary text of the Wiki page
 # Ex: If user gives input "When was George Washington born",
 #       input to function will be "George Washington born", and the
 #       function will recurse down to find the "George Washington" page,
-#       then return ["George Washington", *wiki page summary*]
+#       then return ["George Washington", "born", *wiki page summary*]
 sub testSubjectValid {
     my $subject = $_[0];
     my $ongoing = $_[1];
@@ -81,8 +81,11 @@ sub testSubjectValid {
 }
 
 # Reformats the user's query into a variety of different
-# searchable forms (returns an array of them)
-# Inputs:
+# searchable forms
+# Returns an array of (reformatted query, weight) tuples, where
+# weight is manually assigned based on how good I think that
+# type of rewrite is, similar to the approach in the AskMSR paper
+# Inputs (3):
 #   - Question type ("who is", "what are", etc.)
 #   - Subject found by testSubjectValid())
 #   - Remainder of query (also returned from testSubjectValid())
@@ -98,7 +101,7 @@ sub transform {
     my $temp = "";
     for(my $i = (0+@subjectSplit)-1; $i >= 0; $i--){
         $temp = $subjectSplit[$i]." ".$temp;
-        push @searches, $temp.$verb." ".$remainder;
+        push @searches, [$temp.$verb." ".$remainder, (((0+@subjectSplit)-$i)/(0+@subjectSplit))*10];
     }
     
     return @searches;
