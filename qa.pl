@@ -33,7 +33,7 @@ while(1){
     # The three hashes are maps of ngram => array of weights
     #   Every time an ngram is found, the weight of the query transform
     #   that retrieved it is pushed onto the corresponding array
-    my %unigrams, %bigrams, %trigrams;
+    my %unigrams = (), %bigrams = (), %trigrams = ();
     for my $ref (transform($questionType, $subject, $remainder)){
         my ($transformed, $weight) = @{$ref};
         my @matches = ($wikiEntry =~ /$transformed.*?[\.\?!]/sg);
@@ -64,26 +64,34 @@ while(1){
     my @sortedUnigrams = sort { $unigrams{$b} <=> $unigrams{$a} } keys %unigrams;
     my @sortedBigrams = sort { $bigrams{$b} <=> $bigrams{$a} } keys %bigrams;
     my @sortedTrigrams = sort { $trigrams{$b} <=> $trigrams{$a} } keys %trigrams;
-
+    # println Dumper(@sortedTrigrams);
     # Tiling
+    my $flag = 1;
     my $response = $subject;
-    for my $trigram (@sortedTrigrams){
-        my @responseWords = split(/\s+/, $response);
-        my ($trigramW1, $trigramW2, $trigramW3) = split(/\s+/, $trigram);
+    while($flag){
+        $flag = 0;
+        for my $trigram (@sortedTrigrams){
+            my @responseWords = split(/\s+/, $response);
+            my ($trigramW1, $trigramW2, $trigramW3) = split(/\s+/, $trigram);
 
-        if($responseWords[(scalar @responseWords)-2] eq $trigramW1 &&
-            $responseLastWord eq $trigramW2){
-            $response .= " ".$trigramW3;
-        }
-        elsif($responseWords[(scalar @responseWords)-1] eq $trigramW1){
-            $response .= " ".$trigramW2." ".$trigramW3;
-        }
+            if($responseWords[(scalar @responseWords)-2] eq $trigramW1 &&
+                $responseLastWord eq $trigramW2){
+                $response .= " ".$trigramW3;
+                $flag = 1;
+            }
+            elsif($responseWords[(scalar @responseWords)-1] eq $trigramW1){
+                $response .= " ".$trigramW2." ".$trigramW3;
+                $flag = 1;
+            }
 
-        if($responseWords[0] eq $trigramW2 && $responseWords[1] eq $trigramW3){
-            $response = $trigramW1." ".$response;
-        }
-        elsif($responseWords[0] eq $trigramW3){
-            $response = $trigramW1." ".$trigramW2." ".$response;
+            if($responseWords[0] eq $trigramW2 && $responseWords[1] eq $trigramW3){
+                $response = $trigramW1." ".$response;
+                $flag = 1;
+            }
+            elsif($responseWords[0] eq $trigramW3){
+                $response = $trigramW1." ".$trigramW2." ".$response;
+                $flag = 1;
+            }
         }
     }
     println $response;
@@ -107,7 +115,7 @@ sub testSubjectValid {
     my ($subject, $ongoing) = @_;
     if(my $result = $wiki->search($subject)){
         $ongoing =~ s/(.*)\s+/\1/;
-        return ($subject, $ongoing, $result->text());
+        return ($subject, $ongoing, $result->fulltext());
     }
     else {
         if(my @temp = ($subject =~ /(.*)\s+(\w+)/)){
