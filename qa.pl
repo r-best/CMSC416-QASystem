@@ -14,19 +14,22 @@ while(1){
     $input = lc($input);
     $input =~ s/\?$//; # Remove question mark if the user included one
     
-    # Exit condition
-    if($input =~ /^exit$/){ last; }
-    # Make sure input is formatted correctly
+    if($input =~ /^\s*exit\s*$/){ last; }
     elsif(!($input =~ /^wh(o|at|en|ere)\s+/)){ println "Please begin your input with a 'Who', 'What', 'When', or 'Where'"; next; }
 
-    # Split user's query into the question type ("who is", "what are", etc..) and the actual question
-    my ($questionType, $question) = ($input =~ /^(wh(?:o|at|en|ere)\s+\w+(?:\s+(?:the|a|an))?)\s+(.*)/);
+    # Split user's query into:
+    #   - Interrogative ("who", "what", etc..)
+    #   - Verb ('is', 'was', etc.)
+    #   - And the actual question (i.e. everything else)
+    my ($interrogative, $verb, $question) = ($input =~ /^(wh(?:o|at|en|ere))\s+(\w+(?:\s+(?:the|a|an))?)\s+(.*)/);
     
     # Search Wikipedia for the subject, see testSubjectValid() method for details on return values
     my ($subject, $remainder, $wikiEntry) = testSubjectValid($question);
     if($subject == -1){
         println "I'm sorry, I can't find the answer to that question, feel free to try another"; next;
     }
+
+    # Remove unnecessary junk from the Wikipedia entry
     $wikiEntry =~ s/\{\{.*?\}\}//sg;
     $wikiEntry =~ s/\{.*?\}//sg;
     $wikiEntry =~ s/<ref.*?\/(ref)?>//sg;
@@ -41,7 +44,7 @@ while(1){
     #   Every time an ngram is found, the weight of the query transform
     #   that retrieved it is pushed onto the corresponding array
     my %unigrams = (), %bigrams = (), %trigrams = ();
-    for my $ref (transform($questionType, $subject, $remainder)){
+    for my $ref (transform($interrogative, $verb, $subject, $remainder)){
         my ($transformed, $weight) = @{$ref};
         # println $transformed;
         my @matches = ($wikiEntry =~ /$transformed.*?[\.\?!]/sg);
@@ -130,6 +133,11 @@ while(1){
 #       then return ["George Washington", "born", *wiki page summary*]
 sub testSubjectValid {
     my ($subject, $ongoing) = @_;
+
+    if($subject eq ""){
+        return (-1, -1, -1);
+    }
+
     if(my $result = $wiki->search($subject)){
         $ongoing =~ s/(.*)\s+/\1/;
         return ($subject, $ongoing, $result->text());
@@ -149,16 +157,16 @@ sub testSubjectValid {
 # Returns an array of (reformatted query, weight) tuples, where
 # weight is manually assigned based on how good I think that
 # type of rewrite is, similar to the approach in the AskMSR paper
-# Inputs (3):
-#   - Question type ("who is", "what are", etc.)
+# Inputs (4):
+#   - Interrogative ("who", "what", etc.)
+#   - Verb ('is', 'was', etc.)
 #   - Subject found by testSubjectValid())
 #   - Remainder of query (also returned from testSubjectValid())
 # Ex: "When was George Washington born?" => "George Washington was born"
 sub transform {
-    my ($interrogative, $verb) = split(/\s+/, $_[0]);
-    my $subject = $_[1];
+    my ($interrogative, $verb, $subject, $remainder) = @_;
     my @subjectSplit = split(/\s+/, $subject);
-    my $remainder = $_[2];
+
     my @searches;
 
     # If verb is present tense 'is', add 'was' because if someone
