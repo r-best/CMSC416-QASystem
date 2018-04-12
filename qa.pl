@@ -161,6 +161,10 @@ sub transform {
     my $remainder = $_[2];
     my @searches;
 
+    # If verb is present tense 'is', add 'was' because if someone
+    # searches 'Who is George Washington' it won't get any results
+    $verb =~ s/^is$/(?:is|was)/;
+    
     if($interrogative =~ /who/){
         # Account for things like 'Washington was born on..' instead of
         # 'George Washington was born on..' by taking the verb+remainder
