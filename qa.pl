@@ -152,6 +152,9 @@ sub transform {
     my $remainder = $_[2];
     my @searches;
     
+    # Account for things like 'Washington was born on..' instead of the
+    # full 'George Washington was born on..' by taking the verb+remainder
+    # and adding on the last word of subject, last two words, etc.
     my $temp = "";
     for(my $i = (scalar @subjectSplit)-1; $i >= 0; $i--){
         $temp = $subjectSplit[$i]." ".$temp;
@@ -162,6 +165,8 @@ sub transform {
         }
     }
     
+    # Allow for Wikipedia sometimes adding in a person's middle name
+    # i.e. Guy Fieri's page starts with 'Guy Ramsay Fieri'
     if(scalar @subjectSplit == 2){
         push @searches, [$subjectSplit[0]."\\s+\\w+?\\s+".$subjectSplit[1]." ".$verb." ".$remainder, 2];
     }
