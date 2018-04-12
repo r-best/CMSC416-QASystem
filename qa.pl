@@ -18,7 +18,7 @@ while(1){
     elsif(!($input =~ /^[Ww](ho|hat|hen|here)\s+/)){ println "Please begin your input with a 'Who', 'What', 'When', or 'Where'"; next; }
 
     # Split user's query into the question type ("who is", "what are", etc..) and the actual question
-    my ($questionType, $question) = ($input =~ /^([Ww](?:ho|hat|hen|here)\s+\w+(?:\s+an?)?)\s+(.*)/);
+    my ($questionType, $question) = ($input =~ /^([Ww](?:ho|hat|hen|here)\s+\w+(?:\s+(?:the|a|an))?)\s+(.*)/);
     
     # Search Wikipedia for the subject, see testSubjectValid() method for details on return values
     my ($subject, $remainder, $wikiEntry) = testSubjectValid($question);
@@ -101,6 +101,9 @@ while(1){
                 $flag = 1;
             }
         }
+        if(($response =~ y===c) > 280){
+            $flag = 0;
+        }
     }
     println $response;
 }
@@ -151,6 +154,23 @@ sub transform {
     my @subjectSplit = split(/\s+/, $subject);
     my $remainder = $_[2];
     my @searches;
+
+    if($questionType =~ /[Ww]ho/){
+        # Allow for Wikipedia sometimes adding in a person's middle name
+        # i.e. Guy Fieri's page starts with 'Guy Ramsay Fieri'
+        if(scalar @subjectSplit == 2){
+            push @searches, [$subjectSplit[0]."\\s+\\w+?\\s+".$subjectSplit[1]." ".$verb." ".$remainder, 2];
+        }
+    }
+    elsif($questionType =~ /[Ww]hat/){
+        
+    }
+    elsif($questionType =~ /[Ww]hen/){
+        
+    }
+    elsif($questionType =~ /[Ww]here/){
+        
+    }
     
     # Account for things like 'Washington was born on..' instead of the
     # full 'George Washington was born on..' by taking the verb+remainder
@@ -165,11 +185,6 @@ sub transform {
         }
     }
     
-    # Allow for Wikipedia sometimes adding in a person's middle name
-    # i.e. Guy Fieri's page starts with 'Guy Ramsay Fieri'
-    if(scalar @subjectSplit == 2){
-        push @searches, [$subjectSplit[0]."\\s+\\w+?\\s+".$subjectSplit[1]." ".$verb." ".$remainder, 2];
-    }
     
     return @searches;
 }
