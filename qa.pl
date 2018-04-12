@@ -1,5 +1,6 @@
 use WWW::Wikipedia;
 use Data::Dumper;
+use Text::Autoformat qw(autoformat);
 
 sub println { print "@_"."\n" }
 
@@ -10,6 +11,7 @@ while(1){
     print "> ";
     my $input = <>;
     chomp $input;
+    $input = lc($input);
     $input =~ s/\?$//; # Remove question mark if the user included one
     
     # Exit condition
@@ -30,6 +32,7 @@ while(1){
     $wikiEntry =~ s/<ref.*?\/(ref)?>//sg;
     $wikiEntry =~ s/\s?\(.*?\)\s?/ /sg;
     $wikiEntry =~ s/'(.*?)'/\1/sg;
+    $wikiEntry = lc($wikiEntry);
     # println $wikiEntry;
 
     # For each restructured query, find all sentences that contain it, 
@@ -75,7 +78,6 @@ while(1){
     # println Dumper(%trigrams);
     
     # Tiling
-    println "BEGINNING TILING";
     my $response = $subject;
     while(1){
         my $temp = $response;
@@ -105,10 +107,10 @@ while(1){
         }
 
         # If nothing changed this round, we're done tiling
-        if($response eq $temp){
-            last;
-        }
+        last if $response eq $temp;
     }
+    $response =~ s/$subject/autoformat($subject, { case => 'title' })/eg;
+    $response =~ s/\n//g; # For some reason that autoformat sticks in a bunch of newlines, remove them
     println $response;
 }
 
