@@ -15,12 +15,12 @@ while(1){
     $input =~ s/\?$//; # Remove question mark if the user included one
     
     # Exit condition
-    if($input =~ /^[Ee]xit$/){ last; }
+    if($input =~ /^exit$/){ last; }
     # Make sure input is formatted correctly
-    elsif(!($input =~ /^[Ww](ho|hat|hen|here)\s+/)){ println "Please begin your input with a 'Who', 'What', 'When', or 'Where'"; next; }
+    elsif(!($input =~ /^wh(o|at|en|ere)\s+/)){ println "Please begin your input with a 'Who', 'What', 'When', or 'Where'"; next; }
 
     # Split user's query into the question type ("who is", "what are", etc..) and the actual question
-    my ($questionType, $question) = ($input =~ /^([Ww](?:ho|hat|hen|here)\s+\w+(?:\s+(?:the|a|an))?)\s+(.*)/);
+    my ($questionType, $question) = ($input =~ /^(wh(?:o|at|en|ere)\s+\w+(?:\s+(?:the|a|an))?)\s+(.*)/);
     
     # Search Wikipedia for the subject, see testSubjectValid() method for details on return values
     my ($subject, $remainder, $wikiEntry) = testSubjectValid($question);
@@ -161,7 +161,7 @@ sub transform {
     my $remainder = $_[2];
     my @searches;
 
-    if($interrogative =~ /[Ww]ho/){
+    if($interrogative =~ /who/){
         # Account for things like 'Washington was born on..' instead of
         # 'George Washington was born on..' by taking the verb+remainder
         # and adding on the last word of subject, last two words, etc.
@@ -180,13 +180,13 @@ sub transform {
             push @searches, [$subjectSplit[0]."\\s+\\w+?\\s+".$subjectSplit[1]." ".$verb." ".$remainder, 2];
         }
     }
-    elsif($interrogative =~ /[Ww]hat/){
+    elsif($interrogative =~ /what/){
         
     }
-    elsif($interrogative =~ /[Ww]hen/){
+    elsif($interrogative =~ /when/){
         
     }
-    elsif($interrogative =~ /[Ww]here/){
+    elsif($interrogative =~ /where/){
         
     }
 
