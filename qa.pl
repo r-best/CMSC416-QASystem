@@ -44,7 +44,7 @@ while(1){
         my @matches = ($wikiEntry =~ /$transformed.*?[\.\?!]/sg);
         for my $match (@matches){
             # println $match;
-            $match =~ s/([\(\)\$,'`"\x{2019}\x{201c}\x{201d}%&:;])/ $1 /g; # Separate punctuation characters into their own tokens
+            $match =~ s/([\(\)\$\.,'`"\x{2019}\x{201c}\x{201d}%&:;])/ $1 /g; # Separate punctuation characters into their own tokens
             my @tokens = split(/\s+/, $match);
             for(my $i = 0; $i < scalar @tokens; $i++){
                 push @{$unigrams{$tokens[$i]}}, $weight;
@@ -71,38 +71,42 @@ while(1){
     my @sortedUnigrams = sort { $unigrams{$b} <=> $unigrams{$a} } keys %unigrams;
     my @sortedBigrams = sort { $bigrams{$b} <=> $bigrams{$a} } keys %bigrams;
     my @sortedTrigrams = sort { $trigrams{$b} <=> $trigrams{$a} } keys %trigrams;
+
+    # println Dumper(%trigrams);
     
     # Tiling
     println "BEGINNING TILING";
-    my $flag = 1;
     my $response = $subject;
-    while($flag){
-        $flag = 0;
-        for my $trigram (@sortedTrigrams){
+    while(1){
+        my $temp = $response;
+        for(my $i = 0; $i < scalar @sortedTrigrams; $i++){
             my @responseWords = split(/\s+/, $response);
-            my ($trigramW1, $trigramW2, $trigramW3) = split(/\s+/, $trigram);
+            my ($trigramW1, $trigramW2, $trigramW3) = split(/\s+/, $sortedTrigrams[$i]);
 
             if($responseWords[(scalar @responseWords)-2] eq $trigramW1 &&
                 $responseLastWord eq $trigramW2){
                 $response .= " ".$trigramW3;
-                $flag = 1;
             }
             elsif($responseWords[(scalar @responseWords)-1] eq $trigramW1){
                 $response .= " ".$trigramW2." ".$trigramW3;
-                $flag = 1;
             }
-
-            if($responseWords[0] eq $trigramW2 && $responseWords[1] eq $trigramW3){
+            elsif($responseWords[0] eq $trigramW2 && $responseWords[1] eq $trigramW3){
                 $response = $trigramW1." ".$response;
-                $flag = 1;
             }
             elsif($responseWords[0] eq $trigramW3){
                 $response = $trigramW1." ".$trigramW2." ".$response;
-                $flag = 1;
             }
+            else{
+                next;
+            }
+
+            splice(@sortedTrigrams, $i, 1);
+            $i--;
         }
-        if(($response =~ y===c) > 280){
-            $flag = 0;
+
+        # If nothing changed this round, we're done tiling
+        if($response eq $temp){
+            last;
         }
     }
     println $response;
@@ -126,7 +130,7 @@ sub testSubjectValid {
     my ($subject, $ongoing) = @_;
     if(my $result = $wiki->search($subject)){
         $ongoing =~ s/(.*)\s+/\1/;
-        return ($subject, $ongoing, $result->fulltext());
+        return ($subject, $ongoing, $result->text());
     }
     else {
         if(my @temp = ($subject =~ /(.*)\s+(\w+)/)){
@@ -149,43 +153,49 @@ sub testSubjectValid {
 #   - Remainder of query (also returned from testSubjectValid())
 # Ex: "When was George Washington born?" => "George Washington was born"
 sub transform {
-    my ($questionType, $verb) = split(/\s+/, $_[0]);
+    my ($interrogative, $verb) = split(/\s+/, $_[0]);
     my $subject = $_[1];
     my @subjectSplit = split(/\s+/, $subject);
     my $remainder = $_[2];
     my @searches;
 
-    if($questionType =~ /[Ww]ho/){
+    if($interrogative =~ /[Ww]ho/){
+        # Account for things like 'Washington was born on..' instead of
+        # 'George Washington was born on..' by taking the verb+remainder
+        # and adding on the last word of subject, last two words, etc.
+        my $temp = "";
+        for(my $i = (scalar @subjectSplit)-1; $i > 0; $i--){
+            $temp = $subjectSplit[$i]." ".$temp;
+            push @searches, [$temp.$verb, 1];
+            if($remainder ne ""){
+                push @searches, [$temp.$verb." ".$remainder, 1];
+            }
+        }
+
         # Allow for Wikipedia sometimes adding in a person's middle name
         # i.e. Guy Fieri's page starts with 'Guy Ramsay Fieri'
         if(scalar @subjectSplit == 2){
             push @searches, [$subjectSplit[0]."\\s+\\w+?\\s+".$subjectSplit[1]." ".$verb." ".$remainder, 2];
         }
     }
-    elsif($questionType =~ /[Ww]hat/){
+    elsif($interrogative =~ /[Ww]hat/){
         
     }
-    elsif($questionType =~ /[Ww]hen/){
+    elsif($interrogative =~ /[Ww]hen/){
         
     }
-    elsif($questionType =~ /[Ww]here/){
+    elsif($interrogative =~ /[Ww]here/){
         
     }
-    
-    # Account for things like 'Washington was born on..' instead of the
-    # full 'George Washington was born on..' by taking the verb+remainder
-    # and adding on the last word of subject, last two words, etc.
-    my $temp = "";
-    for(my $i = (scalar @subjectSplit)-1; $i >= 0; $i--){
-        $temp = $subjectSplit[$i]." ".$temp;
-        if($remainder eq ""){
-            push @searches, [$temp.$verb, 1];
-        } else {
-            push @searches, [$temp.$verb." ".$remainder, 1];
-        }
+
+    # Add the basic reformulations (not dependent on interrogative)
+    # e.g. 'When was George Washington born' -> 
+    #           'George Washington was' AND 'George Washington was born'
+    push @searches, [$subject." ".$verb, 1];
+    if($remainder ne ""){
+        push @searches, [$subject." ".$verb." ".$remainder, 2];
     }
-    
-    
+
     return @searches;
 }
 
@@ -198,6 +208,6 @@ sub averageWeights {
         for my $number (@{$hash->{$key}}){
             $total += $number;
         }
-        $hash->{$key} = $total / (scalar @{$hash->{$key}});
+        $hash->{$key} = $total;# / (scalar @{$hash->{$key}});
     }
 }
