@@ -186,9 +186,9 @@ sub transform {
     }
     
     if($interrogative =~ /who/){
-        # Account for things like 'Washington was born on..' instead of
-        # 'George Washington was born on..' by taking the verb+remainder
-        # and adding on the last word of subject, last two words, etc.
+        # Account for things like 'Washington was born on' instead of
+        # 'George Washington was born on' by taking the last word of 
+        # the subject and iteratively adding the others onto the front
         my $temp = "";
         for(my $i = (scalar @subjectSplit)-1; $i > 0; $i--){
             $temp = $subjectSplit[$i]." ".$temp;
@@ -212,6 +212,20 @@ sub transform {
     }
     elsif($interrogative =~ /where/){
         
+    }
+
+    # Account for things like 'treaty was registered' instead
+    # of 'treaty of versailles was registered' by taking the
+    # first word of the subject and iteratively adding the
+    # rest, this is the opposite of the similar for loop found
+    # in the 'who' section above
+    my $temp = "";
+    for(my $i = 0; $i < (scalar @subjectSplit)-1; $i++){
+        $temp = $subjectSplit[$i]." ".$temp;
+        push @searches, [$article.$temp.$verb, 1];
+        if($remainder ne ""){
+            push @searches, [$article.$temp.$verb." ".$remainder, 2];
+        }
     }
 
     # Add the basic reformulations (not dependent on interrogative)
