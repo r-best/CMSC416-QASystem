@@ -1,126 +1,181 @@
 use WWW::Wikipedia;
 use Data::Dumper;
 use Text::Autoformat qw(autoformat);
+use IO::Handle;
+
+if(scalar @ARGV < 1){
+    die 'Please provide an output file for the log';
+}
+
+my $logFile = shift @ARGV;
+my $fh;
 
 sub println { print "@_"."\n" }
+sub LOG { print $fh  "@_"."\n" }
 
 my $wiki = WWW::Wikipedia->new();
 
-println "Please enter a question beginning with 'Who', 'What', 'When', or 'Where'";
-while(1){
-    print "> ";
-    my $input = <>;
-    chomp $input;
-    $input =~ s/\?$//; # Remove question mark if the user included one
-    
-    if($input =~ /^\s*exit\s*$/){ last; }
-    elsif(!($input =~ /^wh(o|at|en|ere)\s+/)){ println "Please begin your input with a 'Who', 'What', 'When', or 'Where'"; next; }
-
-    # Split user's query into:
-    #   - Interrogative ("who", "what", etc..)
-    #   - Verb ('is', 'was', etc.)
-    #   - Article ('the', 'a', 'an') - THIS ONE IS OPTIONAL
-    #   - And the actual question (i.e. everything else)
-    my ($interrogative, $verb, $article, $question) = ($input =~ /^([Ww]h(?:o|at|en|ere))\s+(\w+)\s+(?:(the|a|an)\s+)?(.*)/);
-    
-    # Search Wikipedia for the subject, see testSubjectValid() method for details on return values
-    my ($subject, $remainder, $wikiEntry) = testSubjectValid($question);
-    if($subject == -1){
-        println "I'm sorry, I can't find the answer to that question, feel free to try another"; next;
-    }
-    
-    # Remove unnecessary junk from the Wikipedia entry
-    $wikiEntry =~ s/\{\{.*?\}\}//sg;
-    $wikiEntry =~ s/\{.*?\}//sg;
-    $wikiEntry =~ s/<ref.*?\/(ref)?>//sg;
-    $wikiEntry =~ s/\s?\(.*?\)\s?/ /sg;
-    $wikiEntry =~ s/'(?!s\s)(.*?)'/\1/sg;
-    $wikiEntry = lc($wikiEntry);
-    # println $wikiEntry;
-
-    # For each restructured query, find all sentences that contain it, 
-    # and extract unigrams, bigrams, and trigrams from them
-    # The three hashes are maps of ngram => array of weights
-    #   Every time an ngram is found, the weight of the query transform
-    #   that retrieved it is pushed onto the corresponding array
-    my %unigrams = (), %bigrams = (), %trigrams = ();
-    for my $ref (transform($interrogative, $verb, $article, $subject, $remainder)){
-        my ($transformed, $weight) = @{$ref};
-        println $transformed;
-        my @matches = ($wikiEntry =~ /$transformed.*?[\.\?!]/sg);
-        for my $match (@matches){
-            # println $match;
-            $match =~ s/([\(\)\$\.,'`"\x{2019}\x{201c}\x{201d}%&:;])/ $1 /g; # Separate punctuation characters into their own tokens
-            my @tokens = split(/\s+/, $match);
-            for(my $i = 0; $i < scalar @tokens; $i++){
-                push @{$unigrams{$tokens[$i]}}, $weight;
-                if($i > 0){
-                    push @{$bigrams{$tokens[$i-1]." ".$tokens[$i]}}, $weight;
-                }
-                if($i > 1){
-                    push @{$trigrams{$tokens[$i-2]." ".$tokens[$i-1]." ".$tokens[$i]}}, $weight;
-                }
-            }
-        }
-    }
-
-    if(scalar keys %unigrams == 0 || scalar keys %bigrams == 0 || scalar keys %trigrams == 0){
-        println "I'm sorry, I can't find the answer to that question, feel free to try another"; next;
-    }
-    
-    # Take the hashes of arrays and convert the arrays to averages of their contents
-    # so that the hashes are now maps of ngram => average weight
-    sumWeights(\%unigrams);
-    sumWeights(\%bigrams);
-    sumWeights(\%trigrams);
-
-    my @sortedUnigrams = sort { $unigrams{$b} <=> $unigrams{$a} } keys %unigrams;
-    my @sortedBigrams = sort { $bigrams{$b} <=> $bigrams{$a} } keys %bigrams;
-    my @sortedTrigrams = sort { $trigrams{$b} <=> $trigrams{$a} } keys %trigrams;
-
-    # println Dumper(%trigrams);
-    
-    # Tiling
-    my $response = $subject;
-    for my $trigram (@sortedTrigrams){
-        if($trigram =~ /^$subject/){
-            $response = $trigram;
-            last;
-        }
-    }
+if(open($fh, '>:encoding(UTF-8)', $logFile)){
+    println "This is a QA system by Bobby Best. Enter a quesion beginning with 'Who', 'What', 'When', or 'Where', or enter 'exit' to quit the program";
     while(1){
-        my $temp = $response;
-        for(my $i = 0; $i < scalar @sortedTrigrams; $i++){
-            my @responseWords = split(/\s+/, $response);
-            my ($trigramW1, $trigramW2, $trigramW3) = split(/\s+/, $sortedTrigrams[$i]);
+        print "> ";
+        my $input = <>;
+        chomp $input;
+        $input =~ s/\?$//; # Remove question mark if the user included one
+        
+        if($input =~ /^\s*[Ee]xit|[Qq]uit\s*$/){ last; }
+        elsif(!($input =~ /^[Ww]h(o|at|en|ere)\s+/)){ println "Please begin your input with a 'Who', 'What', 'When', or 'Where'"; next; }
+        
+        LOG "-----------------------------------------------------------------------------------------------";
+        LOG "-----------------------------------------------------------------------------------------------";
+        LOG "-----------------------------------------------------------------------------------------------";
+        LOG "USER QUERY: '$input'";
 
-            if($responseWords[(scalar @responseWords)-2] eq $trigramW1 &&
-                $responseWords[(scalar @responseWords)-1] eq $trigramW2){
-                $response .= " ".$trigramW3;
-            }
-            # elsif($responseWords[(scalar @responseWords)-1] eq $trigramW1){
-            #     $response .= " ".$trigramW2." ".$trigramW3;
-            # }
-            elsif($responseWords[0] eq $trigramW2 && $responseWords[1] eq $trigramW3){
-                $response = $trigramW1." ".$response;
-            }
-            # elsif($responseWords[0] eq $trigramW3){
-            #     $response = $trigramW1." ".$trigramW2." ".$response;
-            # }
-            else{
-                next;
-            }
-
-            splice(@sortedTrigrams, $i, 1);
-            $i--;
+        # Split user's query into:
+        #   - Interrogative ("who", "what", etc..)
+        #   - Verb ('is', 'was', etc.)
+        #   - Article ('the', 'a', 'an') - THIS ONE IS OPTIONAL
+        #   - And the actual question (i.e. everything else)
+        my ($interrogative, $verb, $article, $question) = ($input =~ /^([Ww]h(?:o|at|en|ere))\s+(\w+)\s+(?:(the|a|an)\s+)?(.*)/);
+        
+        # Search Wikipedia for the subject, see testSubjectValid() method for details on return values
+        my ($subject, $remainder, $wikiEntry) = testSubjectValid($question);
+        if($subject == -1){
+            LOG "ERROR: Unable to find a Wikipedia page";
+            $fh->flush();
+            println "I'm sorry, I can't find the answer to that question, feel free to try another"; next;
         }
 
-        # If nothing changed this round, we're done tiling
-        last if $response eq $temp;
+        # Log the query breakdown
+        LOG "\t- INTERROGATIVE: '$interrogative'";
+        LOG "\t- VERB: '$verb'";
+        if($article ne ""){
+            LOG "\t- ARTICLE: '$article'";
+        }
+        LOG "\t- SUBJECT: '$subject'";
+        if($remainder ne ""){
+            LOG "\t- REMAINDER: '$remainder'";
+        }
+        
+        # Remove unnecessary junk from the Wikipedia entry
+        $wikiEntry =~ s/\s?\(.*?\)\s?/ /sg;
+        $wikiEntry =~ s/\{\{.*\}\}//sg;
+        $wikiEntry =~ s/\{.*\}//sg;
+        $wikiEntry =~ s/<ref.*?\/(ref)?>//sg;
+        $wikiEntry =~ s/\|.*?\n//sg;
+        $wikiEntry =~ s/'(?!s\s)(.*?)'/\1/sg;
+        $wikiEntry =~ s/^\n+/\n/s;
+        $wikiEntry = lc($wikiEntry);
+        
+        LOG "\nWIKIPEDIA ENTRY:";
+        for $line (split(/\n+/, $wikiEntry)){
+            LOG "\t$line";
+        }
+        # println $wikiEntry;
+
+        # For each restructured query, find all sentences that contain it, 
+        # and extract unigrams, bigrams, and trigrams from them
+        # The three hashes are maps of ngram => array of weights
+        #   Every time an ngram is found, the weight of the query transform
+        #   that retrieved it is pushed onto the corresponding array
+        LOG "\nQUERY REFORMULATIONS AND THEIR MATCHES:";
+        my %unigrams = (), %bigrams = (), %trigrams = ();
+        my %totalMatches = (); # this is functionally an array, just made it a hash so I can test if things exist in it easily
+        for my $ref (transform($interrogative, $verb, $article, $subject, $remainder)){
+            my ($transformed, $weight) = @{$ref};
+            LOG "\t[weight $weight]    /$transformed/";
+            my @matches = ($wikiEntry =~ /$transformed.*?[\.\?!]/sg);
+            for my $match (@matches){
+                $match =~ s/\n/ /g;
+                if(exists $totalMatches{$match}){
+                    next;
+                }
+                $totalMatches{$match} = 1;
+                LOG "\t\t\t$match";
+                $match =~ s/([\(\)\$\.,'`"\x{2019}\x{201c}\x{201d}%&:;])/ $1 /g; # Separate punctuation characters into their own tokens
+                my @tokens = split(/\s+/, $match);
+                for(my $i = 0; $i < scalar @tokens; $i++){
+                    push @{$unigrams{$tokens[$i]}}, $weight;
+                    if($i > 0){
+                        push @{$bigrams{$tokens[$i-1]." ".$tokens[$i]}}, $weight;
+                    }
+                    if($i > 1){
+                        push @{$trigrams{$tokens[$i-2]." ".$tokens[$i-1]." ".$tokens[$i]}}, $weight;
+                    }
+                }
+            }
+        }
+
+        if(scalar keys %unigrams == 0 || scalar keys %bigrams == 0 || scalar keys %trigrams == 0){
+            LOG "\nERROR: Didn't find any matches in the Wiki text";
+            $fh->flush();
+            println "I'm sorry, I can't find the answer to that question, feel free to try another"; next;
+        }
+        
+        # Take the hashes of arrays and convert the arrays to averages of their contents
+        # so that the hashes are now maps of ngram => average weight
+        sumWeights(\%unigrams);
+        sumWeights(\%bigrams);
+        sumWeights(\%trigrams);
+
+        my @sortedUnigrams = sort { $unigrams{$b} <=> $unigrams{$a} } keys %unigrams;
+        my @sortedBigrams = sort { $bigrams{$b} <=> $bigrams{$a} } keys %bigrams;
+        my @sortedTrigrams = sort { $trigrams{$b} <=> $trigrams{$a} } keys %trigrams;
+
+        # println Dumper(%trigrams);
+        LOG "\nSORTED TRIGRAMS WITH WEIGHT >1";
+        for my $trigram (@sortedTrigrams){
+            if($trigrams{$trigram} <= 1){
+                last;
+            }
+            LOG "\t[weight $trigrams{$trigram}]    $trigram";
+        }
+        
+        # Tiling
+        my $response = $subject;
+        for my $trigram (@sortedTrigrams){
+            if($trigram =~ /^$subject/){
+                $response = $trigram;
+                last;
+            }
+        }
+        while(1){
+            my $temp = $response;
+            for(my $i = 0; $i < scalar @sortedTrigrams; $i++){
+                my @responseWords = split(/\s+/, $response);
+                my ($trigramW1, $trigramW2, $trigramW3) = split(/\s+/, $sortedTrigrams[$i]);
+
+                if($responseWords[(scalar @responseWords)-2] eq $trigramW1 &&
+                    $responseWords[(scalar @responseWords)-1] eq $trigramW2){
+                    $response .= " ".$trigramW3;
+                }
+                elsif($responseWords[0] eq $trigramW2 && $responseWords[1] eq $trigramW3){
+                    $response = $trigramW1." ".$response;
+                }
+                else{
+                    next;
+                }
+
+                splice(@sortedTrigrams, $i, 1);
+                $i--;
+            }
+
+            # If nothing changed this round, we're done tiling
+            last if $response eq $temp;
+        }
+
+        # Format response to be pretty & print it to log and console
+        $response =~ s/^\b$subject\b/autoformat($subject, { case => 'title' })/eg;
+        $response =~ s/\n//g; # For some reason that autoformat sticks in a bunch of newlines, remove them
+        $response =~ s/\s+([,\.;])/\1/g;
+
+        LOG "\nRESPONSE: $response";
+        $fh->flush();
+        println $response;
     }
-    $response =~ s/^\b$subject\b/autoformat($subject, { case => 'title' })/eg;
-    $response =~ s/\n//g; # For some reason that autoformat sticks in a bunch of newlines, remove them
-    println $response;
+    close $fh;
+} else {
+    die 'Error opening log file '.$logFile;
 }
 
 # Finds the subject of a query by recursively removing the last
@@ -236,6 +291,7 @@ sub transform {
         push @searches, [$article.$subject." ".$verb." ".$remainder, 1];
     }
     
+    @searches = sort { $b->[1] <=> $a->[1] } @searches;
     return @searches;
 }
 
