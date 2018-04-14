@@ -161,6 +161,11 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
         }
         
         # Trigram Tiling
+        # I'm not sure this was really the best approach to take here, it might've
+        # been better to just take the 3 or 4 highest scoring matches and try to
+        # reformulate them into answers, but I don't have enough time left to start an
+        # entirely new approach, so I'll just improve this one as best I can and maybe
+        # try something different in Assignment 6
         my $response = $subject;
         for my $trigram (@sortedTrigrams){
             if($trigram =~ /^$subject/){
