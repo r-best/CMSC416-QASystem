@@ -73,37 +73,54 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
         }
         # println $wikiEntry;
 
+        # N-gram Mining
         # For each restructured query, find all sentences that contain it, 
         # and extract unigrams, bigrams, and trigrams from them
-        # The three hashes are maps of ngram => array of weights
+        # The three hashes are maps of ngram => sum weight
         #   Every time an ngram is found, the weight of the query transform
-        #   that retrieved it is pushed onto the corresponding array
+        #   that retrieved it is added onto the corresponding n-gram's weight sum
         LOG "\nQUERY REFORMULATIONS AND THEIR MATCHES:";
         my %unigrams = (), %bigrams = (), %trigrams = ();
         my %totalMatches = (); # this is functionally an array, just made it a hash so I can test if things exist in it easily
         for my $ref (transform($interrogative, $verb, $article, $subject, $remainder)){
             my ($transformed, $weight) = @{$ref};
             LOG "\t[weight $weight]    /$transformed/";
-            my @matches = ($wikiEntry =~ /$transformed\s+.*?[\.\?!]/sg);
+            my @matches = ($wikiEntry =~ /$transformed\s+.*?[\.\?!]/sg); # Find matches
             for my $match (@matches){
                 $match =~ s/\n/ /g;
 
+                # Test that this sentence hasn't already been matched by a previous regex
                 my $temp = ($match =~ /^$transformed\s+(.*)/)[0];
                 if(exists $totalMatches{$temp}){
                     next;
                 }
                 $totalMatches{$temp} = 1;
-
                 LOG "\t\t\t$match";
+
+                # If the match is missing subject words from the start (e.g. 'Washington..' instead of 'George Washington..')
+                # then we need to add them on
+                if(!($match =~ /^$subject/)){
+                    my @subjectSplit = split(/\s+/, $subject);
+                    my @matchSplit = split(/\s+/, $match);
+                    for(my $i = 0; $i < scalar @subjectSplit; $i++){
+                        for(my $j = 0; $j < scalar @matchSplit; $j++){
+                            if($subjectSplit[$i] eq $matchSplit[$j]){
+                                $match = join(" |", @subjectSplit[0..($i-1)])." ".$match;
+                            }
+                        }
+                    }
+                }
+                
+                # Now we can extract n-grams
                 $match =~ s/([\(\)\$\.,'`"\x{2019}\x{201c}\x{201d}%&:;])/ $1 /g; # Separate punctuation characters into their own tokens
                 my @tokens = split(/\s+/, $match);
                 for(my $i = 0; $i < scalar @tokens; $i++){
-                    push @{$unigrams{$tokens[$i]}}, $weight;
+                    $unigrams{$tokens[$i]} += $weight;
                     if($i > 0){
-                        push @{$bigrams{$tokens[$i-1]." ".$tokens[$i]}}, $weight;
+                        $bigrams{$tokens[$i-1]." ".$tokens[$i]} += $weight;
                     }
                     if($i > 1){
-                        push @{$trigrams{$tokens[$i-2]." ".$tokens[$i-1]." ".$tokens[$i]}}, $weight;
+                        $trigrams{$tokens[$i-2]." ".$tokens[$i-1]." ".$tokens[$i]} += $weight;
                     }
                 }
             }
@@ -114,18 +131,11 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
             $fh->flush();
             println "I'm sorry, I can't find the answer to that question, feel free to try another"; next;
         }
-        
-        # Take the hashes of arrays and convert the arrays to averages of their contents
-        # so that the hashes are now maps of ngram => average weight
-        sumWeights(\%unigrams);
-        sumWeights(\%bigrams);
-        sumWeights(\%trigrams);
 
         my @sortedUnigrams = sort { $unigrams{$b} <=> $unigrams{$a} } keys %unigrams;
         my @sortedBigrams = sort { $bigrams{$b} <=> $bigrams{$a} } keys %bigrams;
         my @sortedTrigrams = sort { $trigrams{$b} <=> $trigrams{$a} } keys %trigrams;
 
-        # println Dumper(%trigrams);
         LOG "\nSORTED TRIGRAMS WITH WEIGHT >1";
         for my $trigram (@sortedTrigrams){
             if($trigrams{$trigram} <= 1){
@@ -240,7 +250,7 @@ sub transform {
     $verb =~ s/^is/(?:is|was)/;
 
     if($article ne ""){
-        $article = "(?:the|a|an)? ";
+        $article = "(?:the|a|an)?\\s+";
     }
     
     if($interrogative =~ /who/){
@@ -249,17 +259,20 @@ sub transform {
         # the subject and iteratively adding the others onto the front
         my $temp = "";
         for(my $i = (scalar @subjectSplit)-1; $i > 0; $i--){
-            $temp = $subjectSplit[$i]." ".$temp;
+            $temp = $subjectSplit[$i]."\\s+".$temp;
             push @searches, [$article.$temp.$verb, 1];
             if($remainder ne ""){
-                push @searches, [$article.$temp.$verb." ".$remainder, 2];
+                push @searches, [$article.$temp.$verb."\\s+".$remainder, 2];
             }
         }
 
         # Allow for Wikipedia sometimes adding in a person's middle name
         # i.e. Guy Fieri's page starts with 'Guy Ramsay Fieri'
         if(scalar @subjectSplit == 2){
-            push @searches, [$article.$subjectSplit[0]."\\s+\\w+?\\s+".$subjectSplit[1]." ".$verb." ".$remainder, 2];
+            push @searches, [$article.$subjectSplit[0]."\\s+\\w+?\\s+".$subjectSplit[1]."\\s+".$verb, 2];
+            if($remainder ne ""){
+                push @searches, [$article.$subjectSplit[0]."\\s+\\w+?\\s+".$subjectSplit[1]."\\s+".$verb."\\s+".$remainder, 2];
+            }
         }
     }
     elsif($interrogative =~ /what/){
@@ -279,10 +292,10 @@ sub transform {
     # in the 'who' section above
     my $temp = "";
     for(my $i = 0; $i < (scalar @subjectSplit)-1; $i++){
-        $temp = $subjectSplit[$i]." ".$temp;
+        $temp = $subjectSplit[$i]."\\s+".$temp;
         push @searches, [$article.$temp.$verb, 1];
         if($remainder ne ""){
-            push @searches, [$article.$temp.$verb." ".$remainder, 2];
+            push @searches, [$article.$temp.$verb."\\s+".$remainder, 2];
         }
     }
 
@@ -291,22 +304,9 @@ sub transform {
     #           'George Washington was' AND 'George Washington was born'
     push @searches, [$article.$subject." ".$verb, 1];
     if($remainder ne ""){
-        push @searches, [$article.$subject." ".$verb." ".$remainder, 1];
+        push @searches, [$article.$subject."\\s+".$verb."\\s+".$remainder, 1];
     }
     
     @searches = sort { $b->[1] <=> $a->[1] } @searches;
     return @searches;
-}
-
-# Takes as input a reference to a hash of the form key => [array of numbers]
-# Modifies the hash to be of the form key => sum of the original array
-sub sumWeights {
-    my ($hash) = @_;
-    for my $key (keys %$hash){
-        my $total = 0;
-        for my $number (@{$hash->{$key}}){
-            $total += $number;
-        }
-        $hash->{$key} = $total;
-    }
 }
