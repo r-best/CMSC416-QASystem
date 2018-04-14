@@ -84,15 +84,16 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
         for my $ref (transform($interrogative, $verb, $article, $subject, $remainder)){
             my ($transformed, $weight) = @{$ref};
             LOG "\t[weight $weight]    /$transformed/";
-            my $test = qr/$transformed.*?[\.\?!]/;
-            println $test;
-            my @matches = ($wikiEntry =~ /$transformed.*?[\.\?!]/sg);
+            my @matches = ($wikiEntry =~ /$transformed\s+.*?[\.\?!]/sg);
             for my $match (@matches){
                 $match =~ s/\n/ /g;
-                if(exists $totalMatches{$match}){
+
+                my $temp = ($match =~ /^$transformed\s+(.*)/)[0];
+                if(exists $totalMatches{$temp}){
                     next;
                 }
-                $totalMatches{$match} = 1;
+                $totalMatches{$temp} = 1;
+
                 LOG "\t\t\t$match";
                 $match =~ s/([\(\)\$\.,'`"\x{2019}\x{201c}\x{201d}%&:;])/ $1 /g; # Separate punctuation characters into their own tokens
                 my @tokens = split(/\s+/, $match);
@@ -249,7 +250,7 @@ sub transform {
         my $temp = "";
         for(my $i = (scalar @subjectSplit)-1; $i > 0; $i--){
             $temp = $subjectSplit[$i]." ".$temp;
-            push @searches, [$article.$temp.$verb." ", 1];
+            push @searches, [$article.$temp.$verb, 1];
             if($remainder ne ""){
                 push @searches, [$article.$temp.$verb." ".$remainder, 2];
             }
@@ -279,7 +280,7 @@ sub transform {
     my $temp = "";
     for(my $i = 0; $i < (scalar @subjectSplit)-1; $i++){
         $temp = $subjectSplit[$i]." ".$temp;
-        push @searches, [$article.$temp.$verb." ", 1];
+        push @searches, [$article.$temp.$verb, 1];
         if($remainder ne ""){
             push @searches, [$article.$temp.$verb." ".$remainder, 2];
         }
@@ -288,7 +289,7 @@ sub transform {
     # Add the basic reformulations (not dependent on interrogative)
     # e.g. 'When was George Washington born' -> 
     #           'George Washington was' AND 'George Washington was born'
-    push @searches, [$article.$subject." ".$verb." ", 1];
+    push @searches, [$article.$subject." ".$verb, 1];
     if($remainder ne ""){
         push @searches, [$article.$subject." ".$verb." ".$remainder, 1];
     }
