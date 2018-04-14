@@ -301,19 +301,24 @@ sub transform {
         
     }
 
+    # -------------------------------------------------------------------------
+    # THIS ONE'S A GOOD RULE, BUT IT CAUSES SOME PROBLEMS LATER ON THAT
+    # I DON'T HAVE ENOUGH TIME LEFT TO SOLVE, SO MAYBE IT'LL COME BACK
+    # IN ASSIGNMENT 6
     # Account for things like 'treaty was registered' instead
     # of 'treaty of versailles was registered' by taking the
     # first word of the subject and iteratively adding the
     # rest, this is the opposite of the similar for loop found
     # in the 'who' section above
-    my $temp = "";
-    for(my $i = 0; $i < (scalar @subjectSplit)-1; $i++){
-        $temp = $subjectSplit[$i]."\\s+".$temp;
-        push @searches, [$article.$temp.$verb, 1];
-        if($remainder ne ""){
-            push @searches, [$article.$temp.$verb."\\s+".$remainder, 2];
-        }
-    }
+    # my $temp = "";
+    # for(my $i = 0; $i < (scalar @subjectSplit)-1; $i++){
+    #     $temp = $subjectSplit[$i]."\\s+".$temp;
+    #     push @searches, [$article.$temp.$verb, 1];
+    #     if($remainder ne ""){
+    #         push @searches, [$article.$temp.$verb."\\s+".$remainder, 2];
+    #     }
+    # }
+    # -------------------------------------------------------------------------
 
     # Add the basic reformulations (not dependent on interrogative)
     # e.g. 'When was George Washington born' -> 
