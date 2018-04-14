@@ -71,16 +71,11 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
         for $line (split(/\n+/, $wikiEntry)){
             LOG "\t$line";
         }
-        # println $wikiEntry;
 
-        # N-gram Mining
-        # For each restructured query, find all sentences that contain it, 
-        # and extract unigrams, bigrams, and trigrams from them
-        # The three hashes are maps of ngram => sum weight
-        #   Every time an ngram is found, the weight of the query transform
-        #   that retrieved it is added onto the corresponding n-gram's weight sum
+        # Match Finding
+        # For each restructured query, find all sentences that contain it.
+        # Log each and add it and its weight to %totalMatches
         LOG "\nQUERY REFORMULATIONS AND THEIR MATCHES:";
-        my %unigrams = (), %bigrams = (), %trigrams = ();
         my %totalMatches = (); # this is functionally an array, just made it a hash so I can test if things exist in it easily
         for my $ref (transform($interrogative, $verb, $article, $subject, $remainder)){
             my ($transformed, $weight) = @{$ref};
@@ -89,62 +84,60 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
             for my $match (@matches){
                 $match =~ s/\n/ /g;
 
-                # Test that this sentence hasn't already been matched by a previous regex
-                my $temp = ($match =~ /^$transformed\s+(.*)/)[0];
-                if(exists $totalMatches{$temp}){
-                    next;
-                }
-                $totalMatches{$temp} = 1;
-                LOG "\t\t\t$match";
-
                 # If the match is missing subject words from the start (e.g. 'Washington..' instead of 'George Washington..')
                 # then we need to add them on
-                if(!($match =~ /^$subject/)){
+                if(!($match =~ /^(?:(?:the|a|an)\s+)?$subject/)){
                     my @subjectSplit = split(/\s+/, $subject);
                     my @matchSplit = split(/\s+/, $match);
                     for(my $i = 0; $i < scalar @subjectSplit; $i++){
                         for(my $j = 0; $j < scalar @matchSplit; $j++){
                             if($subjectSplit[$i] eq $matchSplit[$j]){
-                                $match = join(" |", @subjectSplit[0..($i-1)])." ".$match;
+                                $match = join(" ", @subjectSplit[0..($i-1)])." ".$match;
                             }
                         }
                     }
                 }
-                
-                # Now we can extract n-grams
-                $match =~ s/([\(\)\$\.,'`"\x{2019}\x{201c}\x{201d}%&:;])/ $1 /g; # Separate punctuation characters into their own tokens
-                my @tokens = split(/\s+/, $match);
-                for(my $i = 0; $i < scalar @tokens; $i++){
-                    $unigrams{$tokens[$i]} += $weight;
-                    if($i > 0){
-                        $bigrams{$tokens[$i-1]." ".$tokens[$i]} += $weight;
-                    }
-                    if($i > 1){
-                        $trigrams{$tokens[$i-2]." ".$tokens[$i-1]." ".$tokens[$i]} += $weight;
-                    }
-                }
+
+                LOG "\t\t\t$match";
+                $totalMatches{$match} = $weight;
             }
         }
-
-        if(scalar keys %unigrams == 0 || scalar keys %bigrams == 0 || scalar keys %trigrams == 0){
+        if(scalar keys %totalMatches == 0){
             LOG "\nERROR: Didn't find any matches in the Wiki text";
             $fh->flush();
             println "I'm sorry, I can't find the answer to that question, feel free to try another"; next;
         }
 
-        my @sortedUnigrams = sort { $unigrams{$b} <=> $unigrams{$a} } keys %unigrams;
-        my @sortedBigrams = sort { $bigrams{$b} <=> $bigrams{$a} } keys %bigrams;
+        # N-gram Mining
+        # From each match, locate all trigrams and add the match's weight
+        # to the value in $trigrams{$trigram}
+        # %trigrams becomes a map of trigrams => weight sum of all matches it appeared in
+        my %trigrams = ();
+        for my $match (keys %totalMatches){
+            my $formattedMatch = $match;
+            $formattedMatch =~ s/([\(\)\$\.,'`"%&:;])/ $1 /g; # Separate punctuation characters into their own tokens
+            my @tokens = split(/\s+/, $formattedMatch);
+            for(my $i = 2; $i < scalar @tokens; $i++){
+                $trigrams{$tokens[$i-2]." ".$tokens[$i-1]." ".$tokens[$i]} += $totalMatches{$match};
+            }
+        }
+        if(scalar keys %trigrams == 0){
+            LOG "\nERROR: Unable to find any trigrams in the Wiki matches";
+            $fh->flush();
+            println "I'm sorry, I can't find the answer to that question, feel free to try another"; next;
+        }
+
         my @sortedTrigrams = sort { $trigrams{$b} <=> $trigrams{$a} } keys %trigrams;
 
-        LOG "\nSORTED TRIGRAMS WITH WEIGHT >1";
+        LOG "\nSORTED TRIGRAMS";# WITH WEIGHT >1";
         for my $trigram (@sortedTrigrams){
-            if($trigrams{$trigram} <= 1){
-                last;
-            }
+            # if($trigrams{$trigram} <= 1){
+            #     last;
+            # }
             LOG "\t[weight $trigrams{$trigram}]    $trigram";
         }
         
-        # Tiling
+        # Trigram Tiling
         my $response = $subject;
         for my $trigram (@sortedTrigrams){
             if($trigram =~ /^$subject/){
@@ -178,7 +171,7 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
         }
 
         # Format response to be pretty & print it to log and console
-        $response =~ s/^\b$subject\b/autoformat($subject, { case => 'title' })/eg;
+        $response =~ s/\b$subject\b/autoformat($subject, { case => 'title' })/eg;
         $response =~ s/\n//g; # For some reason that autoformat sticks in a bunch of newlines, remove them
         $response =~ s/\s+([,\.;])/\1/g;
 
