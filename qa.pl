@@ -38,8 +38,8 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
         #   - And the actual question (i.e. everything else)
         my ($interrogative, $verb, $article, $question) = ($input =~ /^([Ww]h(?:o|at|en|ere))\s+(\w+)\s+(?:(the|a|an)\s+)?(.*)/);
         
-        # Search Wikipedia for the subject, see testSubjectValid() method for details on return values
-        my ($subject, $remainder, $wikiEntry) = testSubjectValid($question);
+        # Search Wikipedia for the subject, see findSubject() method for details on return values
+        my ($subject, $remainder, $wikiEntry) = findSubject($question);
         if($subject == -1){
             LOG "ERROR: Unable to find a Wikipedia page";
             $fh->flush();
@@ -106,6 +106,29 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
             LOG "\nERROR: Didn't find any matches in the Wiki text";
             $fh->flush();
             println "I'm sorry, I can't find the answer to that question, feel free to try another"; next;
+        }
+
+        # Match Filtering
+        # Try to filter out matches that don't match the question type
+        for(my $i = 0; $i < scalar @totalMatches; $i++){
+            my $match = $totalMatches[$i];
+            if($interrogative =~ /[Ww]ho/){
+
+            }
+            elsif($interrogative =~ /[Ww]hat/){
+                
+            }
+            elsif($interrogative =~ /[Ww]hen/){
+                # Remove matches that don't have a number
+                if(!($match =~ /\d/)){
+                    splice(@totalMatches, $i, 1);
+                    $i--;
+                    next;
+                }
+            }
+            elsif($interrogative =~ /[Ww]here/){
+                
+            }
         }
 
         # N-gram Mining
@@ -198,7 +221,7 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
 #       input to function will be "George Washington born", and the
 #       function will recurse down to find the "George Washington" page,
 #       then return ["George Washington", "born", *wiki page summary*]
-sub testSubjectValid {
+sub findSubject {
     my ($subject, $ongoing) = @_;
     
     if($subject eq ""){
@@ -211,7 +234,7 @@ sub testSubjectValid {
     }
     else {
         if(my @temp = ($subject =~ /(.+)\s+(\w+)/)){
-            return testSubjectValid($temp[0], $temp[1]." ".$ongoing);
+            return findSubject($temp[0], $temp[1]." ".$ongoing);
         }
         else{
             return (-1, -1, -1);
@@ -227,8 +250,8 @@ sub testSubjectValid {
 # Inputs (4):
 #   - Interrogative ("who", "what", etc.)
 #   - Verb ('is', 'is a', 'was', etc.)
-#   - Subject found by testSubjectValid())
-#   - Remainder of query (also returned from testSubjectValid())
+#   - Subject found by findSubject())
+#   - Remainder of query (also returned from findSubject())
 # Ex: "When was George Washington born?" => "George Washington was born"
 sub transform {
     my ($interrogative, $verb, $article, $subject, $remainder) = @_;
