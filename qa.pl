@@ -21,6 +21,7 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
         print "> ";
         my $input = <>;
         chomp $input;
+        $input = lc($input);
         $input =~ s/\?$//; # Remove question mark if the user included one
         
         if($input =~ /^\s*[Ee]xit|[Qq]uit\s*$/){ last; }
@@ -64,6 +65,7 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
         $wikiEntry =~ s/<ref.*?\/(ref)?>//sg;
         $wikiEntry =~ s/\|.*?\n//sg;
         $wikiEntry =~ s/'(?!s\s)(.*?)'/\1/sg;
+        $wikiEntry =~ s/,((?!\.).)*?,/ /sg;
         $wikiEntry =~ s/^\n+/\n/s;
         $wikiEntry = lc($wikiEntry);
         
