@@ -121,11 +121,11 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
             }
             elsif($interrogative =~ /[Ww]hen/){
                 # Remove matches that don't have a number
-                if(!($match =~ /\d/)){
-                    delete $totalMatches{$match};
-                    $i--;
-                    next;
-                }
+                # if(!($match =~ /\d/)){
+                #     delete $totalMatches{$match};
+                #     $i--;
+                #     next;
+                # }
             }
             elsif($interrogative =~ /[Ww]here/){
                 
@@ -144,7 +144,7 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
                 $highestScore = $totalMatches{$match};
             }
         }
-        println Dumper(%totalMatches);
+        
         # Filter the matches down to those with the highest weight
         my @possibleAnswers = map { %totalMatches{$_} == $highestScore ? $_ : () } keys %totalMatches;
         LOG "\nPOSSIBLE ANSWERS AFTER FILTERING:";
@@ -230,18 +230,6 @@ sub transform {
     }
     
     if($interrogative =~ /who/){
-        # Account for things like 'Washington was born on' instead of
-        # 'George Washington was born on' by taking the last word of 
-        # the subject and iteratively adding the others onto the front
-        my $temp = "";
-        for(my $i = (scalar @subjectSplit)-1; $i > 0; $i--){
-            $temp = $subjectSplit[$i]."\\s+".$temp;
-            push @searches, [$article.$temp.$verb, 3];
-            if($remainder ne ""){
-                push @searches, [$article.$temp.$verb."\\s+".$remainder, 5];
-            }
-        }
-
         # Allow for Wikipedia sometimes adding in a person's middle name
         # i.e. Guy Fieri's page starts with 'Guy Ramsay Fieri'
         if(scalar @subjectSplit == 2){
@@ -265,11 +253,22 @@ sub transform {
         }
     }
 
+    # Account for things like 'Washington was born on' instead of
+    # 'George Washington was born on' by taking the last word of 
+    # the subject and iteratively adding the others onto the front
+    my $temp = "";
+    for(my $i = (scalar @subjectSplit)-1; $i > 0; $i--){
+        $temp = $subjectSplit[$i]."\\s+".$temp;
+        push @searches, [$article.$temp.$verb, 3];
+        if($remainder ne ""){
+            push @searches, [$article.$temp.$verb."\\s+".$remainder, 5];
+        }
+    }
+
     # Account for things like 'treaty was registered' instead
     # of 'treaty of versailles was registered' by taking the
     # first word of the subject and iteratively adding the
-    # rest, this is the opposite of the similar for loop found
-    # in the 'who' section above
+    # rest, this is the opposite of the similar for loop above
     my $temp = "";
     for(my $i = 0; $i < (scalar @subjectSplit)-1; $i++){
         $temp = $subjectSplit[$i]."\\s+".$temp;
