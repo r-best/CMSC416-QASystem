@@ -85,17 +85,24 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
                 $match =~ s/\n/ /g;
                 $match =~ s/(^\s+)|(\s+$)//g;
 
-                # If the match is missing subject words from the start (e.g. 'Washington..' instead of 'George Washington..')
-                # then we need to add them on
+                # If the match is missing subject words then we need to add them on
+                # (e.g. 'Washington was..' instead of 'George Washington was..'
+                #       or 'the Treaty was..' instead of 'the Treaty of Versailles was..')
                 my @subjectSplit = split(/\s+/, $subject);
-                my $join = join("|", @subjectSplit);
-                if(!($match =~ /^(?:(?:the|a|an)\s+)?(?:\s+)?($join)/)){
-                    my @matchSplit = split(/\s+/, $match);
-                    for(my $i = 0; $i < scalar @subjectSplit; $i++){
-                        for(my $j = 0; $j < scalar @matchSplit; $j++){
-                            if($subjectSplit[$i] eq $matchSplit[$j]){
-                                $match = join(" ", @subjectSplit[0..($i-1)])." ".$match;
+                my @matchSplit = split(/\s+/, $match);
+                if(!($match =~ /^(?:(?:the|a|an)\s+)?(?:\s+)?$subject/)){
+                    for(my $i = 0; $i < scalar @matchSplit; $i++){
+                        my $flag = 1;
+                        for(my $j = 0; $j < scalar @subjectSplit; $j++){
+                            if($matchSplit[$i] eq $subjectSplit[$j]){
+                                $flag = 0;
+                                last;
                             }
+                        }
+
+                        if($flag){
+                            $match = $subject." ".(join(" ", @matchSplit[$i..((scalar @matchSplit)-1)]));
+                            last;
                         }
                     }
                 }
