@@ -59,8 +59,8 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
         
         # Remove unnecessary junk from the Wikipedia entry
         $wikiEntry =~ s/\s?\(.*?\)\s?/ /sg;
-        $wikiEntry =~ s/\{\{.*\}\}//sg;
-        $wikiEntry =~ s/\{.*\}//sg;
+        $wikiEntry =~ s/\{\{.*?\}\}//sg;
+        $wikiEntry =~ s/\{.*?\}//sg;
         $wikiEntry =~ s/<ref.*?\/(ref)?>//sg;
         $wikiEntry =~ s/\|.*?\n//sg;
         $wikiEntry =~ s/'(?!s\s)(.*?)'/\1/sg;
@@ -80,7 +80,7 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
         for my $ref (transform($interrogative, $verb, $article, $subject, $remainder)){
             my ($transformed, $weight) = @{$ref};
             LOG "\t[weight $weight]    /$transformed/";
-            my @matches = ($wikiEntry =~ /$transformed\s+.*?[\.\?!]/sg); # Find matches
+            my @matches = ($wikiEntry =~ /$transformed\s+.*?[\.\?!](?!\d)/sg); # Find matches
             for my $match (@matches){
                 $match =~ s/\n/ /g;
 
@@ -183,9 +183,9 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
                     $responseWords[(scalar @responseWords)-1] eq $trigramW2){
                     $response .= " ".$trigramW3;
                 }
-                elsif($responseWords[0] eq $trigramW2 && $responseWords[1] eq $trigramW3){
-                    $response = $trigramW1." ".$response;
-                }
+                # elsif($responseWords[0] eq $trigramW2 && $responseWords[1] eq $trigramW3){
+                #     $response = $trigramW1." ".$response;
+                # }
                 else{
                     next;
                 }
