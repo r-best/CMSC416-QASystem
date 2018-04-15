@@ -88,7 +88,8 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
                 # If the match is missing subject words from the start (e.g. 'Washington..' instead of 'George Washington..')
                 # then we need to add them on
                 my @subjectSplit = split(/\s+/, $subject);
-                if(!($match =~ /^(?:(?:the|a|an)\s+)?(?:\s+)?$subjectSplit[0]/)){
+                my $join = join("|", @subjectSplit);
+                if(!($match =~ /^(?:(?:the|a|an)\s+)?(?:\s+)?($join)/)){
                     my @matchSplit = split(/\s+/, $match);
                     for(my $i = 0; $i < scalar @subjectSplit; $i++){
                         for(my $j = 0; $j < scalar @matchSplit; $j++){
@@ -121,11 +122,11 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
             }
             elsif($interrogative =~ /[Ww]hen/){
                 # Remove matches that don't have a number
-                # if(!($match =~ /\d/)){
-                #     delete $totalMatches{$match};
-                #     $i--;
-                #     next;
-                # }
+                if(!($match =~ /\d/)){
+                    delete $totalMatches{$match};
+                    $i--;
+                    next;
+                }
             }
             elsif($interrogative =~ /[Ww]here/){
                 
