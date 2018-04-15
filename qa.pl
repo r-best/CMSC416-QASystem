@@ -83,11 +83,12 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
             my @matches = ($wikiEntry =~ /$transformed\s+.*?[\.\?!](?!\d)/sg); # Find matches
             for my $match (@matches){
                 $match =~ s/\n/ /g;
+                $match =~ s/(^\s+)|(\s+$)//g;
 
                 # If the match is missing subject words from the start (e.g. 'Washington..' instead of 'George Washington..')
                 # then we need to add them on
-                if(!($match =~ /^(?:(?:the|a|an)\s+)?$subject/)){
-                    my @subjectSplit = split(/\s+/, $subject);
+                my @subjectSplit = split(/\s+/, $subject);
+                if(!($match =~ /^(?:(?:the|a|an)\s+)?(?:\s+)?$subjectSplit[0]/)){
                     my @matchSplit = split(/\s+/, $match);
                     for(my $i = 0; $i < scalar @subjectSplit; $i++){
                         for(my $j = 0; $j < scalar @matchSplit; $j++){
@@ -99,7 +100,7 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
                 }
 
                 LOG "\t\t\t$match";
-                $totalMatches{$match} = $weight;
+                $totalMatches{$match} += $weight;
             }
         }
         if(scalar keys %totalMatches == 0){
@@ -143,7 +144,7 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
                 $highestScore = $totalMatches{$match};
             }
         }
-
+        println Dumper(%totalMatches);
         # Filter the matches down to those with the highest weight
         my @possibleAnswers = map { %totalMatches{$_} == $highestScore ? $_ : () } keys %totalMatches;
         LOG "\nPOSSIBLE ANSWERS AFTER FILTERING:";
@@ -235,18 +236,18 @@ sub transform {
         my $temp = "";
         for(my $i = (scalar @subjectSplit)-1; $i > 0; $i--){
             $temp = $subjectSplit[$i]."\\s+".$temp;
-            push @searches, [$article.$temp.$verb, 1];
+            push @searches, [$article.$temp.$verb, 3];
             if($remainder ne ""){
-                push @searches, [$article.$temp.$verb."\\s+".$remainder, 2];
+                push @searches, [$article.$temp.$verb."\\s+".$remainder, 5];
             }
         }
 
         # Allow for Wikipedia sometimes adding in a person's middle name
         # i.e. Guy Fieri's page starts with 'Guy Ramsay Fieri'
         if(scalar @subjectSplit == 2){
-            push @searches, [$article.$subjectSplit[0]."\\s+\\w+?\\s+".$subjectSplit[1]."\\s+".$verb, 2];
+            push @searches, [$article.$subjectSplit[0]."\\s+\\w+?\\s+".$subjectSplit[1]."\\s+".$verb, 3];
             if($remainder ne ""){
-                push @searches, [$article.$subjectSplit[0]."\\s+\\w+?\\s+".$subjectSplit[1]."\\s+".$verb."\\s+".$remainder, 2];
+                push @searches, [$article.$subjectSplit[0]."\\s+\\w+?\\s+".$subjectSplit[1]."\\s+".$verb."\\s+".$remainder, 5];
             }
         }
     }
@@ -257,34 +258,33 @@ sub transform {
         
     }
     elsif($interrogative =~ /where/){
-        
+        if($verb eq "(?:is|was)" && $remainder eq ""){
+            push @searches, [$article.$subject."\\s+".$verb."\\s+"."located", 3];
+            push @searches, [$article.$subject."\\s+".$verb."\\s+"."in", 3];
+            push @searches, [$article.$subject."\\s+".$verb."\\s+"."found in", 3];
+        }
     }
 
-    # -------------------------------------------------------------------------
-    # THIS ONE'S A GOOD RULE, BUT IT CAUSES SOME PROBLEMS LATER ON THAT
-    # I DON'T HAVE ENOUGH TIME LEFT TO SOLVE, SO MAYBE IT'LL COME BACK
-    # IN ASSIGNMENT 6
     # Account for things like 'treaty was registered' instead
     # of 'treaty of versailles was registered' by taking the
     # first word of the subject and iteratively adding the
     # rest, this is the opposite of the similar for loop found
     # in the 'who' section above
-    # my $temp = "";
-    # for(my $i = 0; $i < (scalar @subjectSplit)-1; $i++){
-    #     $temp = $subjectSplit[$i]."\\s+".$temp;
-    #     push @searches, [$article.$temp.$verb, 1];
-    #     if($remainder ne ""){
-    #         push @searches, [$article.$temp.$verb."\\s+".$remainder, 2];
-    #     }
-    # }
-    # -------------------------------------------------------------------------
+    my $temp = "";
+    for(my $i = 0; $i < (scalar @subjectSplit)-1; $i++){
+        $temp = $subjectSplit[$i]."\\s+".$temp;
+        push @searches, [$article.$temp.$verb, 1];
+        if($remainder ne ""){
+            push @searches, [$article.$temp.$verb."\\s+".$remainder, 3];
+        }
+    }
 
     # Add the basic reformulations (not dependent on interrogative)
     # e.g. 'When was George Washington born' -> 
     #           'George Washington was' AND 'George Washington was born'
-    push @searches, [$article.$subject." ".$verb, 1];
+    push @searches, [$article.$subject."\\s+".$verb, 1];
     if($remainder ne ""){
-        push @searches, [$article.$subject."\\s+".$verb."\\s+".$remainder, 1];
+        push @searches, [$article.$subject."\\s+".$verb."\\s+".$remainder, 3];
     }
     
     @searches = sort { $b->[1] <=> $a->[1] } @searches;
