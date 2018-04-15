@@ -1,0 +1,75 @@
+---------------------------------------------------------------------------
+------------------------------CORRECT ANSWERS------------------------------
+---------------------------------------------------------------------------
+1) Who 
+    SYSTEM ANSWER: 
+
+2) Who 
+    SYSTEM ANSWER: 
+
+3) What 
+    SYSTEM ANSWER: 
+
+4) What 
+    SYSTEM ANSWER: 
+
+5) When 
+    SYSTEM ANSWER: 
+
+6) When 
+    SYSTEM ANSWER: 
+
+7) Where 
+    SYSTEM ANSWER: 
+
+8) Where 
+    SYSTEM ANSWER: 
+
+9) Why 
+    SYSTEM ANSWER: 
+
+10) Why 
+    SYSTEM ANSWER: 
+
+---------------------------------------------------------------------------
+-------------------------------WRONG ANSWERS-------------------------------
+---------------------------------------------------------------------------
+1) Who 
+    SYSTEM ANSWER: 
+    CORRECT ANSWER: 
+
+2) Who 
+    SYSTEM ANSWER: 
+    CORRECT ANSWER: 
+
+3) What 
+    SYSTEM ANSWER: 
+    CORRECT ANSWER: 
+
+4) What 
+    SYSTEM ANSWER: 
+    CORRECT ANSWER: 
+
+5) When 
+    SYSTEM ANSWER: 
+    CORRECT ANSWER: 
+
+6) When 
+    SYSTEM ANSWER: 
+    CORRECT ANSWER: 
+
+7) Where 
+    SYSTEM ANSWER: 
+    CORRECT ANSWER: 
+
+8) Where 
+    SYSTEM ANSWER: 
+    CORRECT ANSWER: 
+
+9) Why 
+    SYSTEM ANSWER: 
+    CORRECT ANSWER: 
+
+10) Why 
+    SYSTEM ANSWER: 
+    CORRECT ANSWER: 
