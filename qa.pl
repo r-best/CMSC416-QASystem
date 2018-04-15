@@ -76,7 +76,7 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
         # For each restructured query, find all sentences that contain it.
         # Log each and add it and its weight to %totalMatches
         LOG "\nQUERY REFORMULATIONS AND THEIR MATCHES:";
-        my %totalMatches = (); # this is functionally an array, just made it a hash so I can test if things exist in it easily
+        my %totalMatches = ();
         for my $ref (transform($interrogative, $verb, $article, $subject, $remainder)){
             my ($transformed, $weight) = @{$ref};
             LOG "\t[weight $weight]    /$transformed/";
@@ -110,8 +110,8 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
 
         # Match Filtering
         # Try to filter out matches that don't match the question type
-        for(my $i = 0; $i < scalar @totalMatches; $i++){
-            my $match = $totalMatches[$i];
+        for(my $i = 0; $i < scalar keys %totalMatches; $i++){
+            my $match = (keys %totalMatches)[$i];
             if($interrogative =~ /[Ww]ho/){
 
             }
@@ -121,7 +121,7 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
             elsif($interrogative =~ /[Ww]hen/){
                 # Remove matches that don't have a number
                 if(!($match =~ /\d/)){
-                    splice(@totalMatches, $i, 1);
+                    delete $totalMatches{$match};
                     $i--;
                     next;
                 }
@@ -130,75 +130,29 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
                 
             }
         }
-
-        # N-gram Mining
-        # From each match, locate all trigrams and add the match's weight
-        # to the value in $trigrams{$trigram}
-        # %trigrams becomes a map of trigrams => weight sum of all matches it appeared in
-        my %trigrams = ();
-        for my $match (keys %totalMatches){
-            my $formattedMatch = $match;
-            $formattedMatch =~ s/([\(\)\$\.,'`"%&:;])/ $1 /g; # Separate punctuation characters into their own tokens
-            my @tokens = split(/\s+/, $formattedMatch);
-            for(my $i = 2; $i < scalar @tokens; $i++){
-                $trigrams{$tokens[$i-2]." ".$tokens[$i-1]." ".$tokens[$i]} += $totalMatches{$match};
-            }
-        }
-        if(scalar keys %trigrams == 0){
-            LOG "\nERROR: Unable to find any trigrams in the Wiki matches";
+        if(scalar keys %totalMatches == 0){
+            LOG "\nERROR: No Wiki matches were found that answered the question";
             $fh->flush();
             println "I'm sorry, I can't find the answer to that question, feel free to try another"; next;
         }
 
-        my @sortedTrigrams = sort { $trigrams{$b} <=> $trigrams{$a} } keys %trigrams;
-
-        LOG "\nSORTED TRIGRAMS";# WITH WEIGHT >1";
-        for my $trigram (@sortedTrigrams){
-            # if($trigrams{$trigram} <= 1){
-            #     last;
-            # }
-            LOG "\t[weight $trigrams{$trigram}]    $trigram";
-        }
-        
-        # Trigram Tiling
-        # I'm not sure this was really the best approach to take here, it might've
-        # been better to just take the 3 or 4 highest scoring matches and try to
-        # reformulate them into answers, but I don't have enough time left to start an
-        # entirely new approach, so I'll just improve this one as best I can and maybe
-        # try something different in Assignment 6
-        my $response = $subject;
-        for my $trigram (@sortedTrigrams){
-            if($trigram =~ /^$subject/){
-                $response = $trigram;
-                last;
+        # Find the highest weight out of all matches
+        my $highestScore = (values %totalMatches)[0];
+        for $match (keys %totalMatches){
+            if($totalMatches{$match} > $highestScore){
+                $highestScore = $totalMatches{$match};
             }
         }
-        while(1){
-            my $temp = $response;
-            for(my $i = 0; $i < scalar @sortedTrigrams; $i++){
-                my @responseWords = split(/\s+/, $response);
-                my ($trigramW1, $trigramW2, $trigramW3) = split(/\s+/, $sortedTrigrams[$i]);
 
-                if($responseWords[(scalar @responseWords)-2] eq $trigramW1 &&
-                    $responseWords[(scalar @responseWords)-1] eq $trigramW2){
-                    $response .= " ".$trigramW3;
-                }
-                # elsif($responseWords[0] eq $trigramW2 && $responseWords[1] eq $trigramW3){
-                #     $response = $trigramW1." ".$response;
-                # }
-                else{
-                    next;
-                }
-
-                splice(@sortedTrigrams, $i, 1);
-                $i--;
-            }
-
-            # If nothing changed this round, we're done tiling
-            last if $response eq $temp;
+        # Filter the matches down to those with the highest weight
+        my @possibleAnswers = map { %totalMatches{$_} == $highestScore ? $_ : () } keys %totalMatches;
+        LOG "\nPOSSIBLE ANSWERS AFTER FILTERING:";
+        for $answer (@possibleAnswers){
+            LOG "\t$answer";
         }
 
         # Format response to be pretty & print it to log and console
+        my $response = $possibleAnswers[0];
         $response =~ s/\b$subject\b/autoformat($subject, { case => 'title' })/eg;
         $response =~ s/\n//g; # For some reason that autoformat sticks in a bunch of newlines, remove them
         $response =~ s/\s+([,\.;])/\1/g;
