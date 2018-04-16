@@ -94,19 +94,19 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
                 # Convert @subjectSplit into hash keys to make it easy to test if an element exists
                 my %subjectSplitHash = ();
                 for my $token (@subjectSplit){ $subjectSplitHash{$token} = 1; }
-
+println "A".$match;
                 # If the match is missing subject words then we need to add them on
                 # (e.g. 'Washington was..' instead of 'George Washington was..'
                 #       or 'the Treaty was..' instead of 'the Treaty of Versailles was..')
                 if(!($match =~ /^(?:(?:the|a|an)\s+)?(?:\s+)?$subject/)){
                     for(my $i = 0; $i < scalar @matchSplit; $i++){
-                        if(!(exists $subjectSplitHash{$matchSplit[$i]}) && !(exists $subjectSplitHash{$matchSplit[$i]})){
+                        if(!(exists $subjectSplitHash{$matchSplit[$i]}) && !(exists $subjectSplitHash{$matchSplit[$i+1]})){
                             $match = $subject." ".(join(" ", @matchSplit[$i..((scalar @matchSplit)-1)]));
                             last;
                         }
                     }
                 }
-
+println "B".$match;
                 LOG "\t\t\t$match";
                 $totalMatches{$match} += $weight;
             }
