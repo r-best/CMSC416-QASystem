@@ -1,3 +1,16 @@
+# Assignment 5
+# CMSC 416
+# Due: Mon Apr. 16, 2018
+# Program Summary:
+#   A question-answer system designed to answer simple 'who', 'what', 'when',
+#   and 'where' questions.
+# Algorithm:
+#   When the user enters a question, it goes to Wikipedia and attempts to find
+#   the related page, then uses handmade query reformulation rules to find
+#   the answer.
+# Usage Format:
+#   perl qa.pl log.txt
+
 use WWW::Wikipedia;
 use Data::Dumper;
 use Text::Autoformat qw(autoformat);
