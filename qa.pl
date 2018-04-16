@@ -58,7 +58,8 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
             LOG "\t- REMAINDER: '$remainder'";
         }
         
-        # Remove unnecessary junk from the Wikipedia entry
+        # Remove unnecessary junk from the Wikipedia entry and make it easier to
+        $wikiEntry =~ s/<\n?!\n?-\n?-.*?-\n?-\n?>/ /sg;
         $wikiEntry =~ s/\s?\(.*?\)\s?/ /sg;
         $wikiEntry =~ s/\{\{.*?\}\}//sg;
         $wikiEntry =~ s/\{.*?\}//sg;
@@ -86,23 +87,20 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
             for my $match (@matches){
                 $match =~ s/\n/ /g;
                 $match =~ s/(^\s+)|(\s+$)//g;
+                
+                my @subjectSplit = split(/\s+/, $subject);
+                my @matchSplit = split(/\s+/, $match);
+
+                # Convert @subjectSplit into hash keys to make it easy to test if an element exists
+                my %subjectSplitHash = ();
+                for my $token (@subjectSplit){ $subjectSplitHash{$token} = 1; }
 
                 # If the match is missing subject words then we need to add them on
                 # (e.g. 'Washington was..' instead of 'George Washington was..'
                 #       or 'the Treaty was..' instead of 'the Treaty of Versailles was..')
-                my @subjectSplit = split(/\s+/, $subject);
-                my @matchSplit = split(/\s+/, $match);
                 if(!($match =~ /^(?:(?:the|a|an)\s+)?(?:\s+)?$subject/)){
                     for(my $i = 0; $i < scalar @matchSplit; $i++){
-                        my $flag = 1;
-                        for(my $j = 0; $j < scalar @subjectSplit; $j++){
-                            if($matchSplit[$i] eq $subjectSplit[$j]){
-                                $flag = 0;
-                                last;
-                            }
-                        }
-
-                        if($flag){
+                        if(!(exists $subjectSplitHash{$matchSplit[$i]}) && !(exists $subjectSplitHash{$matchSplit[$i]})){
                             $match = $subject." ".(join(" ", @matchSplit[$i..((scalar @matchSplit)-1)]));
                             last;
                         }
