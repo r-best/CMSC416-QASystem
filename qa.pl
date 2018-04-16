@@ -94,7 +94,7 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
                 # Convert @subjectSplit into hash keys to make it easy to test if an element exists
                 my %subjectSplitHash = ();
                 for my $token (@subjectSplit){ $subjectSplitHash{$token} = 1; }
-println "A".$match;
+
                 # If the match is missing subject words then we need to add them on
                 # (e.g. 'Washington was..' instead of 'George Washington was..'
                 #       or 'the Treaty was..' instead of 'the Treaty of Versailles was..')
@@ -106,7 +106,7 @@ println "A".$match;
                         }
                     }
                 }
-println "B".$match;
+
                 LOG "\t\t\t$match";
                 $totalMatches{$match} += $weight;
             }
@@ -151,6 +151,11 @@ println "B".$match;
             if($totalMatches{$match} > $highestScore){
                 $highestScore = $totalMatches{$match};
             }
+        }
+        if($highestScore <= 1){
+            LOG "\nERROR: No possible answers have a strong enough score";
+            $fh->flush();
+            println "I'm sorry, I can't find the answer to that question, feel free to try another"; next;
         }
         
         # Filter the matches down to those with the highest weight
@@ -251,7 +256,7 @@ sub transform {
         
     }
     elsif($interrogative =~ /when/){
-        
+        push @searches, [$remainder, 2];
     }
     elsif($interrogative =~ /where/){
         if($verb eq "(?:is|was)" && $remainder eq ""){
@@ -289,9 +294,9 @@ sub transform {
     # Add the basic reformulations (not dependent on interrogative)
     # e.g. 'When was George Washington born' -> 
     #           'George Washington was' AND 'George Washington was born'
-    push @searches, [$article.$subject."\\s+".$verb, 1];
+    push @searches, [$article.$subject."\\s+".$verb, 3];
     if($remainder ne ""){
-        push @searches, [$article.$subject."\\s+".$verb."\\s+".$remainder, 3];
+        push @searches, [$article.$subject."\\s+".$verb."\\s+".$remainder, 5];
     }
     
     @searches = sort { $b->[1] <=> $a->[1] } @searches;
