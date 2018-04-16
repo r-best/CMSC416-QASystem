@@ -1,75 +1,75 @@
 ---------------------------------------------------------------------------
 ------------------------------CORRECT ANSWERS------------------------------
 ---------------------------------------------------------------------------
-1) Who 
-    SYSTEM ANSWER: 
+1) Who is Alan Turing?
+    SYSTEM ANSWER: Alan Turing was an english computer scientist logician philosopher, and theoretical biologist.
 
-2) Who 
-    SYSTEM ANSWER: 
+2) Who is Guy Fieri?
+    SYSTEM ANSWER: Guy Fieri is an american restaurateur, author, game show host, and television personality.
 
-3) What 
-    SYSTEM ANSWER: 
+3) Who is Batman?
+    SYSTEM ANSWER: Batman is a fictional superhero appearing in american comic books published by dc comics.
 
-4) What 
-    SYSTEM ANSWER: 
+4) What is the Incredibles?
+    SYSTEM ANSWER: the Incredibles is a 2004 american computer-animated  superhero film written and directed by brad bird  released by walt disney pictures, and starring the voices of craig t.
 
-5) When 
-    SYSTEM ANSWER: 
+5) What is Seinfeld?
+    SYSTEM ANSWER: Seinfeld is widely considered to be one of the greatest and most influential sitcoms ever made.
 
-6) When 
-    SYSTEM ANSWER: 
+6) What is Earth?
+    SYSTEM ANSWER: Earth is the third planet from the sun and the only object in the universe known to harbor life.
 
-7) Where 
-    SYSTEM ANSWER: 
+7) What is an apple?
+    SYSTEM ANSWER: an Apple is a sweet, edible fruit produced by an Apple tree.
 
-8) Where 
-    SYSTEM ANSWER: 
+8) What is quantum computing?
+    SYSTEM ANSWER: Quantum Computing is computing using quantum-mechanical phenomena, such as superposition and entanglement.
 
-9) Why 
-    SYSTEM ANSWER: 
+9) When is Valentine's Day?
+    SYSTEM ANSWER: Valentines Day is celebrated annually on february 14.
 
-10) Why 
-    SYSTEM ANSWER: 
+10) When was the Treaty of Versailles registered?
+    SYSTEM ANSWER: Treaty Of Versailles the treaty was registered by the secretariat of the league of nations on 21 october 1919.
 
 ---------------------------------------------------------------------------
 -------------------------------WRONG ANSWERS-------------------------------
 ---------------------------------------------------------------------------
-1) Who 
-    SYSTEM ANSWER: 
-    CORRECT ANSWER: 
+1) Who is Velma Dinkley?
+    SYSTEM ANSWER: Velma is a female given name.
+    CORRECT ANSWER: The girl from Scooby Doo who loses her glasses all the time
 
-2) Who 
-    SYSTEM ANSWER: 
-    CORRECT ANSWER: 
+2) Who is Ash Ketchum?
+    SYSTEM ANSWER: Ash is wood Ash  fireplaces, etc.
+    CORRECT ANSWER: The main character from the Pokemon TV series
 
-3) What 
-    SYSTEM ANSWER: 
-    CORRECT ANSWER: 
+3) When was the Statue of Liberty built?
+    SYSTEM ANSWER: I'm sorry, I can't find the answer to that question, feel free to try another
+    CORRECT ANSWER: 1886
 
-4) What 
-    SYSTEM ANSWER: 
-    CORRECT ANSWER: 
+4) When was the War of 1812?
+    SYSTEM ANSWER: War Of 1812 was a conflict fought between the united states and their respective allies.
+    CORRECT ANSWER: 1812.
 
-5) When 
-    SYSTEM ANSWER: 
-    CORRECT ANSWER: 
+5) When was George Washington born?
+    SYSTEM ANSWER: George Washington was an american statesman and soldier who served as the first president of the united states from 1789 to 1797 and was one of the founding fathers of the united states.
+    CORRECT ANSWER: February 22, 1732
 
-6) When 
-    SYSTEM ANSWER: 
-    CORRECT ANSWER: 
+6) Where is Mt Everest?
+    SYSTEM ANSWER: Mt Everest is earth's highest mountain above sea level, located in the mahalangur himal sub-range of the himalayas.
+    CORRECT ANSWER: Border of China and Nepal
 
-7) Where 
-    SYSTEM ANSWER: 
-    CORRECT ANSWER: 
+7) Where is the Eiffel Tower?
+    SYSTEM ANSWER: Eiffel Tower is the most-visited paid monument in the world; 6.91&nbsp;million people ascended it in 2015.
+    CORRECT ANSWER: Paris, France
 
-8) Where 
-    SYSTEM ANSWER: 
-    CORRECT ANSWER: 
+8) Where is the Statue of Liberty?
+    SYSTEM ANSWER: Statue Of Liberty is a figure of a robed woman representing libertas, a roman liberty goddess.
+    CORRECT ANSWER: New York
 
-9) Why 
-    SYSTEM ANSWER: 
-    CORRECT ANSWER: 
+9) Where is Niagara Falls?
+    SYSTEM ANSWER: Niagara Falls is famed both for its beauty and as a valuable source of hydroelectric power.
+    CORRECT ANSWER: Up near the Great Lakes
 
-10) Why 
-    SYSTEM ANSWER: 
-    CORRECT ANSWER: 
+10) Where was George Washington born?
+    SYSTEM ANSWER: George Washington was born into the provincial gentry of colonial virginia to a family of wealthy planters who owned tobacco plantations and slaves, which he inherited.
+    CORRECT ANSWER: Westmoreland County, Virginia
