@@ -1,9 +1,9 @@
-# Assignment 5
+# Assignment 6
 # CMSC 416
-# Due: Mon Apr. 16, 2018
+# Due: Mon Apr. 30, 2018
 # Program Summary:
 #   A question-answer system designed to answer simple 'who', 'what', 'when',
-#   and 'where' questions.
+#   and 'where' questions, with some cool improvements over the last one.
 # Algorithm:
 #   When the user enters a question, it goes to Wikipedia and attempts to find
 #   the related page, then uses handmade query reformulation rules to find
@@ -165,21 +165,62 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
                 $highestScore = $totalMatches{$match};
             }
         }
-        if($highestScore <= 1){
-            LOG "\nERROR: No possible answers have a strong enough score";
-            $fh->flush();
-            println "I'm sorry, I can't find the answer to that question, feel free to try another"; next;
+
+        my $response = "";
+        # If we have a response with a sufficiently high weight, use it
+        if($highestScore >= 5){
+            # Filter the matches down to those with the highest weight
+            my @possibleAnswers = map { %totalMatches{$_} == $highestScore ? $_ : () } keys %totalMatches;
+            LOG "\nPOSSIBLE ANSWERS AFTER FILTERING:";
+            for $answer (@possibleAnswers){
+                LOG "\t$answer";
+            }
+
+            $response = $possibleAnswers[0];
         }
-        
-        # Filter the matches down to those with the highest weight
-        my @possibleAnswers = map { %totalMatches{$_} == $highestScore ? $_ : () } keys %totalMatches;
-        LOG "\nPOSSIBLE ANSWERS AFTER FILTERING:";
-        for $answer (@possibleAnswers){
-            LOG "\t$answer";
+        else{ # Else do tiling
+            my %trigrams = ();
+            for my $match (keys %totalMatches){
+                my @matchSplit = split(/\s+/, $match);
+                for(my $i = 2; $i < scalar @matchSplit; $i++){
+                    $trigrams{$matchSplit[$i-2]." ".$matchSplit[$i-1]." ".$matchSplit[$i]} += $totalMatches{$match};
+                }
+            }
+            println Dumper(%trigrams);
+            my @sortedTrigrams = sort { $trigrams{$b} <=> $trigrams{$a} } keys %trigrams;
+
+            for my $trigram (@sortedTrigrams){
+                if($trigram =~ /^$subject/){
+                    $response = $trigram;
+                    last;
+                }
+            }
+            while(1){
+                my $temp = $response;
+                for(my $i = 0; $i < scalar @sortedTrigrams; $i++){
+                    my @responseWords = split(/\s+/, $response);
+                    my ($trigramW1, $trigramW2, $trigramW3) = split(/\s+/, $sortedTrigrams[$i]);
+
+                    if($responseWords[(scalar @responseWords)-2] eq $trigramW1 &&
+                        $responseWords[(scalar @responseWords)-1] eq $trigramW2){
+                        $response .= " ".$trigramW3;
+                    }
+                    # elsif($responseWords[0] eq $trigramW2 && $responseWords[1] eq $trigramW3){
+                    #     $response = $trigramW1." ".$response;
+                    # }
+                    else{
+                        next;
+                    }
+
+                    splice(@sortedTrigrams, $i, 1);
+                    $i--;
+                }
+                # If nothing changed this round, we're done tiling
+                last if $response eq $temp;
+            }
         }
 
         # Format response to be pretty & print it to log and console
-        my $response = $possibleAnswers[0];
         $response =~ s/\b$subject\b/autoformat($subject, { case => 'title' })/eg;
         $response =~ s/\n//g; # For some reason that autoformat sticks in a bunch of newlines, remove them
         $response =~ s/\s+([,\.;])/\1/g;
