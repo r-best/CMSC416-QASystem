@@ -15,6 +15,8 @@ use WWW::Wikipedia;
 use Data::Dumper;
 use Text::Autoformat qw(autoformat);
 use IO::Handle;
+use WordNet::QueryData;
+use WordNet::stem;
 
 if(scalar @ARGV < 1){
     die 'Please provide an output file for the log';
@@ -27,6 +29,8 @@ sub println { print "@_"."\n" }
 sub LOG { print $fh  "@_"."\n" }
 
 my $wiki = WWW::Wikipedia->new();
+my $wordNet = WordNet::QueryData->new();
+my $stemmer = WordNet::stem->new($wordNet);
 
 if(open($fh, '>:encoding(UTF-8)', $logFile)){
     println "This is a QA system by Bobby Best. Enter a quesion beginning with 'Who', 'What', 'When', or 'Where', or enter 'exit' to quit the program";
@@ -311,6 +315,7 @@ sub transform {
     }
     elsif($interrogative =~ /when/){
         push @searches, [$remainder, 2];
+        push @searches, [$stemmer->stemString($remainder), 1];
     }
     elsif($interrogative =~ /where/){
         if($verb eq "(?:is|was)" && $remainder eq ""){
@@ -352,6 +357,12 @@ sub transform {
     if($remainder ne ""){
         push @searches, [$article.$subject."\\s+".$verb."\\s+".$remainder, 5];
     }
+    
+    # Add an "or"-ing of the query's important terms
+    push @searches, ["(?:".$verb."|".$remainder.")", 2];
+
+    # Same as previous, but stemmed
+    push @searches, ["(?:".$stemmer->stemWord($verb)."|".$stemmer->stemWord($remainder).")", 1];
     
     @searches = sort { $b->[1] <=> $a->[1] } @searches;
     return @searches;
