@@ -361,7 +361,34 @@ sub transform {
 
     # Same as previous, but stemmed
     push @searches, ["(?:".$stemmer->stemString($verb)."|".$stemmer->stemString($remainder).")", 1];
+
+    # Find synonyms of the words in the remainder and use those to try and get more results
+    my @synonyms;
+    for my $word (split(/\s+/, $remainder)){
+        push @searches, ["(?:".(join("|", findSynonyms($word))).")", 0.5];
+    }
     
     @searches = sort { $b->[1] <=> $a->[1] } @searches;
     return @searches;
+}
+
+# Finds synonyms of a given word using WordNet
+sub findSynonyms {
+    my $word = $_[0];
+    $word =~ s/^(\w+).*/\1/;
+    $word = $stemmer->stemString($word);
+    $word =~ s/^(?:\s+)?(.*?)(?:\s)+$/\1/;
+
+    my @synonyms = ($word);
+
+    for my $sense ($wordNet->querySense($word."#n", "syns")){
+        for my $synonym ($wordNet->querySense($sense, "syns")){
+            $synonym =~ s/#.*$//;
+            if($synonym ne $word){
+                push @synonyms, $synonym;
+            }
+        }
+    }
+
+    return @synonyms;
 }
