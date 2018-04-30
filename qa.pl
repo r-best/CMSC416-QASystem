@@ -22,6 +22,8 @@ if(scalar @ARGV < 1){
     die 'Please provide an output file for the log';
 }
 
+my $MAX_WEIGHT = 12;
+
 my $logFile = shift @ARGV;
 my $fh;
 
@@ -164,7 +166,7 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
 
         LOG "\nPOSSIBLE ANSWERS:";
         for my $key (sort { $totalMatches{$b} <=> $totalMatches{$a} } keys %totalMatches){
-            LOG "\t[confidence ".($totalMatches{$key}/12)."]\t".$key;
+            LOG "\t[confidence ".($totalMatches{$key}/$MAX_WEIGHT)."]\t".$key;
         }
 
         # Find the highest weight out of all matches
@@ -175,7 +177,7 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
 
         # If we have a response with a sufficiently high weight, use it
         my $response = "";
-        if($highestScore >= 5){
+        if($highestScore > $MAX_WEIGHT/2){
             # Use the first match with the highest weight
             my @possibleAnswers = map { %totalMatches{$_} == $highestScore ? $_ : () } keys %totalMatches;
             $response = $possibleAnswers[0];

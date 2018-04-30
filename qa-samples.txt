@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------
-------------------------------CORRECT ANSWERS------------------------------
+------------------------------------WHO------------------------------------
 ---------------------------------------------------------------------------
 1) Who is Alan Turing?
     SYSTEM ANSWER: Alan Turing was an english computer scientist logician philosopher, and theoretical biologist.
@@ -7,69 +7,127 @@
 2) Who is Guy Fieri?
     SYSTEM ANSWER: Guy Fieri is an american restaurateur, author, game show host, and television personality.
 
-3) Who is Batman?
-    SYSTEM ANSWER: Batman is a fictional superhero appearing in american comic books published by dc comics.
+3) Who is King Arthur?
+    SYSTEM ANSWER: King Arthur the legendary arthur developed as a king of britain against saxon invaders in the late 5th and early 6th centuries ad.
 
-4) What is the Incredibles?
-    SYSTEM ANSWER: the Incredibles is a 2004 american computer-animated  superhero film written and directed by brad bird  released by walt disney pictures, and starring the voices of craig t.
+4) Who is George Costanza?
+    SYSTEM ANSWER: George Costanza is a character in the american television sitcom [[seinfeld]], played by jason alexander.
 
-5) What is Seinfeld?
-    SYSTEM ANSWER: Seinfeld is widely considered to be one of the greatest and most influential sitcoms ever made.
+5) Who is Batman?
+    SYSTEM ANSWER: Batman the character emerged.
+    CORRECT ANSWER: Batman is a fictional superhero appearing in american comic books published by dc comics.
 
-6) What is Earth?
-    SYSTEM ANSWER: Earth is the third planet from the sun and the only object in the universe known to harbor life.
-
-7) What is an apple?
-    SYSTEM ANSWER: an Apple is a sweet, edible fruit produced by an Apple tree.
-
-8) What is quantum computing?
-    SYSTEM ANSWER: Quantum Computing is computing using quantum-mechanical phenomena, such as superposition and entanglement.
-
-9) When is Valentine's Day?
-    SYSTEM ANSWER: Valentines Day is celebrated annually on february 14.
-
-10) When was the Treaty of Versailles registered?
-    SYSTEM ANSWER: Treaty Of Versailles the treaty was registered by the secretariat of the league of nations on 21 october 1919.
-
----------------------------------------------------------------------------
--------------------------------WRONG ANSWERS-------------------------------
----------------------------------------------------------------------------
-1) Who is Velma Dinkley?
+6) Who is Velma Dinkley?
     SYSTEM ANSWER: Velma is a female given name.
     CORRECT ANSWER: The girl from Scooby Doo who loses her glasses all the time
 
-2) Who is Ash Ketchum?
+7) Who is Ash Ketchum?
     SYSTEM ANSWER: Ash is wood Ash  fireplaces, etc.
     CORRECT ANSWER: The main character from the Pokemon TV series
 
-3) When was the Statue of Liberty built?
-    SYSTEM ANSWER: I'm sorry, I can't find the answer to that question, feel free to try another
+---------------------------------------------------------------------------
+-----------------------------------WHAT------------------------------------
+---------------------------------------------------------------------------
+1) What is the Incredibles?
+    SYSTEM ANSWER: the Incredibles is a 2004 american computer-animated  superhero film written and directed by brad bird  released by walt disney pictures, and starring the voices of craig t.
+
+2) What is Seinfeld?
+    SYSTEM ANSWER: Seinfeld is an american television sitcom that ran for nine seasons on nbc, from 1989 to 1998.
+
+3) What is Earth?
+    SYSTEM ANSWER: Earth is the densest planet in the history of the four terrestrial planets.
+
+4) What is pie?
+    SYSTEM ANSWER: Pie is a baked dish which is usually made of a pastry dough casing that covers or completely contains a filling of various sweet or savoury ingredients.
+
+5) What is cake?
+    SYSTEM ANSWER: Cake is a form of sweet dessert that is typically baked.
+
+6) What is quantum computing?
+    SYSTEM ANSWER: Quantum Computing is computing using quantum-mechanical phenomena, such as superposition and entanglement.
+
+7) What is an apple?
+    SYSTEM ANSWER: Apple tree.
+    CORRECT ANSWER: an Apple is a sweet, edible fruit produced by an Apple tree.
+
+---------------------------------------------------------------------------
+-----------------------------------WHEN------------------------------------
+---------------------------------------------------------------------------
+1) When is Valentine's Day?
+    SYSTEM ANSWER: Valentines Day is celebrated annually on february 14.
+
+2) When was the Treaty of Versailles registered?
+    SYSTEM ANSWER: Treaty Of Versailles the treaty was registered by the secretariat of the league of nations on 21 october 1919.
+
+3) When was the Earth formed?
+    SYSTEM ANSWER: Earth formed over 4.5 billion years ago.
+
+4) When was the Sun formed?
+    SYSTEM ANSWER: Sun formed approximately 4.6 billion years ago from the gravitational collapse of matter within a region of a large molecular cloud.
+
+5) When was the Statue of Liberty built?
+    SYSTEM ANSWER: Statue Of Liberty was administered by the department of war; since 1933 it has been maintained by the national park service.
     CORRECT ANSWER: 1886
 
-4) When was the War of 1812?
-    SYSTEM ANSWER: War Of 1812 was a conflict fought between the united states and their respective allies.
+6) When was the War of 1812?
+    SYSTEM ANSWER: War Of 1812 the british to raid the coast at will.
     CORRECT ANSWER: 1812.
 
-5) When was George Washington born?
+7) When was George Washington born?
     SYSTEM ANSWER: George Washington was an american statesman and soldier who served as the first president of the united states from 1789 to 1797 and was one of the founding fathers of the united states.
     CORRECT ANSWER: February 22, 1732
 
-6) Where is Mt Everest?
+---------------------------------------------------------------------------
+-----------------------------------WHERE-----------------------------------
+---------------------------------------------------------------------------
+1) Where is Rome?
+    SYSTEM ANSWER: Rome is located in the central-western portion of the italian peninsula  along the shores of the tiber.
+
+1) Where is Mt Everest?
     SYSTEM ANSWER: Mt Everest is earth's highest mountain above sea level, located in the mahalangur himal sub-range of the himalayas.
     CORRECT ANSWER: Border of China and Nepal
 
-7) Where is the Eiffel Tower?
+2) Where is the Eiffel Tower?
     SYSTEM ANSWER: Eiffel Tower is the most-visited paid monument in the world; 6.91&nbsp;million people ascended it in 2015.
     CORRECT ANSWER: Paris, France
 
-8) Where is the Statue of Liberty?
+3) Where is the Statue of Liberty?
     SYSTEM ANSWER: Statue Of Liberty is a figure of a robed woman representing libertas, a roman liberty goddess.
     CORRECT ANSWER: New York
 
-9) Where is Niagara Falls?
+4) Where is Niagara Falls?
     SYSTEM ANSWER: Niagara Falls is famed both for its beauty and as a valuable source of hydroelectric power.
     CORRECT ANSWER: Up near the Great Lakes
 
-10) Where was George Washington born?
+5) Where was George Washington born?
     SYSTEM ANSWER: George Washington was born into the provincial gentry of colonial virginia to a family of wealthy planters who owned tobacco plantations and slaves, which he inherited.
     CORRECT ANSWER: Westmoreland County, Virginia
+
+7) Where is Greenwich?
+    SYSTEM ANSWER: Greenwich meridian and Greenwich mean time.
+    CORRECT ANSWER: Southeast London, England
+
+---------------------------------------------------------------------------
+------------------------------TILING EXAMPLE-------------------------------
+---------------------------------------------------------------------------
+That last question above is a great example of an answer that is not found exactly as
+written in Wikipedia, here's what the log looked like for it:
+
+POSSIBLE ANSWERS:
+	[confidence 0.5]	greenwich is notable for its maritime history and for giving its name to the greenwich meridian and greenwich mean time.
+	[confidence 0.25]	greenwich formed part of kent until 1889 when the county of london was created.
+	[confidence 0.25]	greenwich these buildings became the royal naval college in 1873, and they remained an establishment for military education until 1998 when they passed into the hands of the greenwich foundation.
+	[confidence 0.25]	greenwich the town became the site of a royal palace and was the birthplace of many tudors, including henry viii and elizabeth i.
+	[confidence 0.25]	greenwich the historic rooms within these buildings remain open to the public; other buildings are used by university of greenwich and trinity laban conservatoire of music and dance.
+	[confidence 0.25]	greenwich the palace fell into disrepair during the english civil war and was rebuilt as the royal naval hospital for sailors by sir christopher wren and his assistant nicholas hawksmoor.
+	[confidence 0.25]	greenwich     england, located east- southeast of charing cross.
+	[confidence 0.25]	greenwich the town became a popular resort in the 18th century and many grand houses were built there next to the park.
+	[confidence 0.25]	greenwich the maritime connections of greenwich were celebrated in the 20th century and the national maritime museum in the former buildings of the royal hospital school in 1934.
+	[confidence 0.25]	greenwich it is located within the royal borough of greenwich, to which it lends its name.
+	[confidence 0.25]	greenwich from the georgian period estates of houses were constructed above the town centre.
+
+RESPONSE: Greenwich meridian and Greenwich mean time.
+
+As you can see, the highest confidence score is only 0.5, which the program considers to be too low, so it instead tries
+to generate an answer from tiling trigrams using the highest scoring entries first, similar to AskMSR; in this case the
+tiling didn't work out very well at all.
