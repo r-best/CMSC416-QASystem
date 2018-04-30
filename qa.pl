@@ -34,7 +34,7 @@ if(scalar @ARGV < 1){
     die 'Please provide an output file for the log';
 }
 
-my $MAX_WEIGHT = 12;
+my $MAX_WEIGHT = 9;
 
 my $logFile = shift @ARGV;
 my $fh;
@@ -195,6 +195,7 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
             $response = $possibleAnswers[0];
         }
         else{ # Else do tiling
+            $response = $subject;
             my %trigrams = ();
             for my $match (keys %totalMatches){
                 my @matchSplit = split(/\s+/, $match);
