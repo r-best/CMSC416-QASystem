@@ -95,7 +95,7 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
         # Match Finding
         # For each restructured query, find all sentences that contain it.
         # Log each and add it and its weight to %totalMatches
-        LOG "\nQUERY REFORMULATIONS AND THEIR MATCHES:";
+        LOG "\nQUERY REFORMULATIONS:";
         my %totalMatches = ();
         for my $ref (transform($interrogative, $verb, $article, $subject, $remainder)){
             my ($transformed, $weight) = @{$ref};
@@ -124,7 +124,7 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
                     }
                 }
 
-                LOG "\t\t\t$match";
+                # LOG "\t\t\t$match";
                 $totalMatches{$match} += $weight;
             }
         }
@@ -162,24 +162,22 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
             println "I'm sorry, I can't find the answer to that question, feel free to try another"; next;
         }
 
+        LOG "\nPOSSIBLE ANSWERS:";
+        for my $key (sort { $totalMatches{$b} <=> $totalMatches{$a} } keys %totalMatches){
+            LOG "\t[confidence ".($totalMatches{$key}/12)."]\t".$key;
+        }
+
         # Find the highest weight out of all matches
         my $highestScore = (values %totalMatches)[0];
         for $match (keys %totalMatches){
-            if($totalMatches{$match} > $highestScore){
-                $highestScore = $totalMatches{$match};
-            }
+            $highestScore = $totalMatches{$match} > $highestScore ? $totalMatches{$match} : $highestScore;
         }
 
-        my $response = "";
         # If we have a response with a sufficiently high weight, use it
+        my $response = "";
         if($highestScore >= 5){
-            # Filter the matches down to those with the highest weight
+            # Use the first match with the highest weight
             my @possibleAnswers = map { %totalMatches{$_} == $highestScore ? $_ : () } keys %totalMatches;
-            LOG "\nPOSSIBLE ANSWERS AFTER FILTERING:";
-            for $answer (@possibleAnswers){
-                LOG "\t$answer";
-            }
-
             $response = $possibleAnswers[0];
         }
         else{ # Else do tiling
@@ -190,7 +188,7 @@ if(open($fh, '>:encoding(UTF-8)', $logFile)){
                     $trigrams{$matchSplit[$i-2]." ".$matchSplit[$i-1]." ".$matchSplit[$i]} += $totalMatches{$match};
                 }
             }
-            println Dumper(%trigrams);
+            # println Dumper(%trigrams);
             my @sortedTrigrams = sort { $trigrams{$b} <=> $trigrams{$a} } keys %trigrams;
 
             for my $trigram (@sortedTrigrams){
@@ -362,7 +360,7 @@ sub transform {
     push @searches, ["(?:".$verb."|".$remainder.")", 2];
 
     # Same as previous, but stemmed
-    push @searches, ["(?:".$stemmer->stemWord($verb)."|".$stemmer->stemWord($remainder).")", 1];
+    push @searches, ["(?:".$stemmer->stemString($verb)."|".$stemmer->stemString($remainder).")", 1];
     
     @searches = sort { $b->[1] <=> $a->[1] } @searches;
     return @searches;
