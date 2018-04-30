@@ -8,6 +8,18 @@
 #   When the user enters a question, it goes to Wikipedia and attempts to find
 #   the related page, then uses handmade query reformulation rules to find
 #   the answer.
+# Query Reformulation Enhancement:
+#   Used WordNet to add new reformulation rules with stemming and synonyms to
+#   try and get more matches out of the Wikipedia entries
+# Answer Composition Enhancement:
+#   If the program does not find an answer with a high enough confidence score
+#   ($MAX_WEIGHT / 2), then it will instead attempt to tile trigrams starting
+#   with the highest scoring ones first, similar to the method in the AskMSR paper
+# Confidence Scoring:
+#   Confidence scores are based on weights, I manually chose a weight that I thought
+#   would be sufficient as a maximum (very unlikely to be achieved) and assigned it
+#   as $MAX_WEIGHT. The confidence score is how much weight the answer has out of
+#   that maximum
 # Usage Format:
 #   perl qa.pl log.txt
 
